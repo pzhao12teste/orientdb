@@ -1,6 +1,6 @@
 /*
  *
- *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  *  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  *  *  See the License for the specific language governing permissions and
  *  *  limitations under the License.
  *  *
- *  * For more information: http://orientdb.com
+ *  * For more information: http://www.orientechnologies.com
  *
  */
 package com.orientechnologies.common.collection;
@@ -40,7 +40,7 @@ import java.util.Set;
 /**
  * Iterator that allow to iterate against multiple collection of elements.
  *
- * @author Luca Garulli (l.garulli--(at)--orientdb.com)
+ * @author Luca Garulli (l.garulli--at--orientechnologies.com)
  */
 public class OMultiCollectionIterator<T> implements Iterator<T>, Iterable<T>, OResettable, OSizeable, OSupportsContains,
     OAutoConvertToRecord {
@@ -49,13 +49,9 @@ public class OMultiCollectionIterator<T> implements Iterator<T>, Iterable<T>, OR
   private Iterator<T>  partialIterator;
 
   private int          browsed            = 0;
-  private int          skip               = -1;
   private int          limit              = -1;
   private boolean      embedded           = false;
   private boolean      autoConvert2Record = true;
-
-
-  private int skipped = 0;
 
   public OMultiCollectionIterator() {
     sources = new ArrayList<Object>();
@@ -68,17 +64,6 @@ public class OMultiCollectionIterator<T> implements Iterator<T>, Iterable<T>, OR
 
   @Override
   public boolean hasNext() {
-    while(skipped < skip){
-      if(!hasNextInternal()){
-        return false;
-      }
-      partialIterator.next();
-      skipped++;
-    }
-    return hasNextInternal();
-  }
-
-  private boolean hasNextInternal() {
     if (sourcesIterator == null) {
       if (sources == null || sources.isEmpty())
         return false;
@@ -122,7 +107,6 @@ public class OMultiCollectionIterator<T> implements Iterator<T>, Iterable<T>, OR
     sourcesIterator = null;
     partialIterator = null;
     browsed = 0;
-    skipped = 0;
   }
 
   public OMultiCollectionIterator<T> add(final Object iValue) {
@@ -177,14 +161,6 @@ public class OMultiCollectionIterator<T> implements Iterator<T>, Iterable<T>, OR
 
   public void setLimit(final int limit) {
     this.limit = limit;
-  }
-
-  public int getSkip() {
-    return skip;
-  }
-
-  public void setSkip(final int skip) {
-    this.skip = skip;
   }
 
   public void setAutoConvertToRecord(final boolean autoConvert2Record) {
@@ -271,7 +247,7 @@ public class OMultiCollectionIterator<T> implements Iterator<T>, Iterable<T>, OR
               if (arraySize == 1)
                 partialIterator = new OIterableObject<T>((T) Array.get(next, 0));
               else
-                partialIterator = (Iterator<T>) OMultiValue.getMultiValueIterator(next, false);
+                partialIterator = (Iterator<T>) OMultiValue.getMultiValueIterator(next);
               return true;
             }
           } else {

@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,102 +18,71 @@
 
 package com.orientechnologies.lucene.test;
 
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.OVertex;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.OCommandSQL;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.assertj.core.api.Assertions;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
-import java.util.List;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.tinkerpop.blueprints.impls.orient.OrientVertexType;
 
 /**
  * Created by enricorisa on 03/09/14.
  */
+@Test(groups = "embedded")
 public class GraphEmbeddedTest extends BaseLuceneTest {
+
+  private OrientGraph graph;
 
   public GraphEmbeddedTest() {
 
   }
 
-  @Before
-  public void init() {
+  public GraphEmbeddedTest(boolean remote) {
+    super();
+  }
 
-    OClass type = db.createVertexClass("City");
+  @BeforeClass
+  public void init() {
+    initDB();
+    graph = new OrientGraph((ODatabaseDocumentTx) databaseDocumentTx, false);
+    OrientVertexType type = graph.createVertexType("City");
     type.createProperty("latitude", OType.DOUBLE);
     type.createProperty("longitude", OType.DOUBLE);
     type.createProperty("name", OType.STRING);
 
-    db.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
-    db.commit();
+    databaseDocumentTx.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+  }
+
+  @AfterClass
+  public void deInit() {
+    deInitDB();
   }
 
   @Test
-  public void embeddedTx() {
+  public void embedded() {
 
-    //THIS WON'T USE LUCENE INDEXES!!!! see #6997
+    graph.getRawGraph().begin();
+    graph.addVertex("class:City", new Object[] { "name", "London" });
+    graph.addVertex("class:City", new Object[] { "name", "Rome" });
 
-    db.begin();
-    OVertex city = db.newVertex("City");
-    city.setProperty("name", "London / a");
-    db.save(city);
+    graph.commit();
 
-    city = db.newVertex("City");
-    city.setProperty("name", "Rome");
-    db.save(city);
-    db.commit();
+    Iterable<Vertex> vertexes = graph.getVertices("City", new String[] { "name" }, new Object[] { "London" });
 
-    db.begin();
-
-    List<ODocument> resultSet = db.query(new OSQLSynchQuery<ODocument>("SELECT from City where name = 'London / a' "));
-
-    Assertions.assertThat(resultSet).hasSize(1);
-
-    resultSet = db.query(new OSQLSynchQuery<ODocument>("SELECT from City where name = 'Rome' "));
-
-    Assertions.assertThat(resultSet).hasSize(1);
+    int size = 0;
+    for (Vertex v : vertexes) {
+      size++;
+    }
+    Assert.assertEquals(size, 1);
   }
 
-  @Test
-  public void testGetVericesFilterClass() {
-
-    OClass v = db.getClass("V");
-    v.createProperty("name", OType.STRING);
-    db.command("CREATE INDEX V.name ON V(name) NOTUNIQUE");
-    db.commit();
-
-    OClass oneClass = db.createVertexClass("One");
-    OClass twoClass = db.createVertexClass("Two");
-
-    OVertex one = db.newVertex(oneClass);
-    one.setProperty("name", "Same");
-    db.save(one);
-
-    OVertex two = db.newVertex(twoClass);
-    two.setProperty("name", "Same");
-    db.save(two);
-
-    db.commit();
-
-    List<ODocument> resultSet = db.query(new OSQLSynchQuery<ODocument>("SELECT from One where name = 'Same' "));
-
-    Assertions.assertThat(resultSet).hasSize(1);
-
-//    graph.addVertex("class:Two", new Object[] { "name", "Same" });
-//
-//    graph.commit();
-//
-//    Iterable<Vertex> vertexes = graph.getVertices("One", new String[] { "name" }, new Object[] { "Same" });
-//
-//    int size = 0;
-//    for (Vertex v : vertexes) {
-//      size++;
-//      Assert.assertNotNull(v);
-//    }
-//    Assert.assertEquals(1, size);
+  @Override
+  protected String getDatabaseName() {
+    return "graphEmbedded";
   }
-
 }

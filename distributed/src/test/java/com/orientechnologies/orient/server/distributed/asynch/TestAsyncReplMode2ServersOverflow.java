@@ -1,7 +1,8 @@
 package com.orientechnologies.orient.server.distributed.asynch;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.record.OVertex;
+import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
+import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 import junit.framework.Assert;
 
 import java.util.concurrent.CountDownLatch;
@@ -17,7 +18,7 @@ public class TestAsyncReplMode2ServersOverflow extends BareBoneBase2ServerTest {
   }
 
   protected void dbClient1() {
-    // OGlobalConfiguration.LOG_CONSOLE_LEVEL.setValue("FINEST");
+//    OGlobalConfiguration.LOG_CONSOLE_LEVEL.setValue("FINEST");
     exec("client1");
   }
 
@@ -34,19 +35,12 @@ public class TestAsyncReplMode2ServersOverflow extends BareBoneBase2ServerTest {
       e.printStackTrace();
     }
 
-    ODatabaseDocumentTx graph = new ODatabaseDocumentTx(getLocalURL());
-    if(graph.exists()){
-      graph.open("admin", "admin");
-    }else{
-      graph.create();
-    }
-
+    OrientBaseGraph graph = new OrientGraphNoTx(getLocalURL());
 
     try {
       int i = 0;
       for (; i < TOTAL; ++i) {
-        final OVertex v = graph.newVertex();
-        v.save();
+        final OrientVertex v = graph.addVertex(null);
         Assert.assertTrue(v.getIdentity().isPersistent());
       }
 
@@ -56,7 +50,7 @@ public class TestAsyncReplMode2ServersOverflow extends BareBoneBase2ServerTest {
 
     } finally {
       System.out.println("Shutting down");
-      graph.close();
+      graph.shutdown();
     }
   }
 }

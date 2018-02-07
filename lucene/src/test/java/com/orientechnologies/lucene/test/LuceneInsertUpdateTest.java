@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Collection;
 
@@ -36,41 +36,57 @@ import java.util.Collection;
  * Created by enricorisa on 28/06/14.
  */
 
+@Test(groups = "embedded")
 public class LuceneInsertUpdateTest extends BaseLuceneTest {
 
   public LuceneInsertUpdateTest() {
     super();
   }
 
-  @Before
-  public void init() {
+  public LuceneInsertUpdateTest(boolean remote) {
+    super();
+  }
 
-    OSchema schema = db.getMetadata().getSchema();
+  @Override
+  protected String getDatabaseName() {
+    return "insertUpdate";
+  }
+
+  @BeforeClass
+  public void init() {
+    initDB();
+
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
     OClass oClass = schema.createClass("City");
 
     oClass.createProperty("name", OType.STRING);
-    db.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+  }
+
+  @AfterClass
+  public void deInit() {
+    deInitDB();
   }
 
   @Test
   public void testInsertUpdateWithIndex() throws Exception {
 
-    OSchema schema = db.getMetadata().getSchema();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
 
     ODocument doc = new ODocument("City");
     doc.field("name", "Rome");
 
-    db.save(doc);
+    databaseDocumentTx.save(doc);
     OIndex idx = schema.getClass("City").getClassIndex("City.name");
     Collection<?> coll = (Collection<?>) idx.get("Rome");
     Assert.assertEquals(coll.size(), 1);
 
     OIdentifiable next = (OIdentifiable) coll.iterator().next();
-    doc = db.load(next.<ORecord>getRecord());
+    doc = databaseDocumentTx.load(next.getRecord());
     Assert.assertEquals(doc.field("name"), "Rome");
 
     doc.field("name", "London");
-    db.save(doc);
+    databaseDocumentTx.save(doc);
 
     coll = (Collection<?>) idx.get("Rome");
     Assert.assertEquals(coll.size(), 0);
@@ -78,11 +94,11 @@ public class LuceneInsertUpdateTest extends BaseLuceneTest {
     Assert.assertEquals(coll.size(), 1);
 
     next = (OIdentifiable) coll.iterator().next();
-    doc = db.load(next.<ORecord>getRecord());
+    doc = databaseDocumentTx.load(next.getRecord());
     Assert.assertEquals(doc.field("name"), "London");
 
     doc.field("name", "Berlin");
-    db.save(doc);
+    databaseDocumentTx.save(doc);
 
     coll = (Collection<?>) idx.get("Rome");
     Assert.assertEquals(coll.size(), 0);

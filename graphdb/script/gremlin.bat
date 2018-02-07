@@ -11,6 +11,7 @@ for %%i in (%LIBDIR%\*.jar) do call :concatsep %%i
 
 set JAVA_OPTIONS=-Xms32M -Xmx512M
 
+
 :: Launch the application
 
 if "%1" == "" goto console
@@ -44,7 +45,7 @@ CALL :concat %%X %1 %2
 
 
 
-java %JAVA_OPTIONS% %ORIENTDB_SETTINGS% %JAVA_ARGS% -cp %CP% com.tinkerpop.gremlin.groovy.jsr223.ScriptExecutor %strg%
+java %JAVA_OPTIONS% %JAVA_ARGS% -cp %CP% com.tinkerpop.gremlin.groovy.jsr223.ScriptExecutor %strg%
 
 goto :eof
 
@@ -52,7 +53,7 @@ goto :eof
 
 :version
 
-java %JAVA_OPTIONS% %ORIENTDB_SETTINGS% %JAVA_ARGS% -cp %CP% com.tinkerpop.gremlin.Version
+java %JAVA_OPTIONS% %JAVA_ARGS% -cp %CP% com.tinkerpop.gremlin.Version
 
 goto :eof
 

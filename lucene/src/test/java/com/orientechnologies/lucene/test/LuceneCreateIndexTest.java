@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -19,12 +19,15 @@
 package com.orientechnologies.lucene.test;
 
 import com.orientechnologies.orient.core.command.script.OCommandScript;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.InputStream;
 import java.util.List;
@@ -32,74 +35,85 @@ import java.util.List;
 /**
  * Created by enricorisa on 26/09/14.
  */
+@Test(groups = "embedded")
+public class LuceneCreateIndexTest extends LuceneSingleFieldEmbeddedTest {
 
-public class LuceneCreateIndexTest extends BaseLuceneTest {
+  public LuceneCreateIndexTest() {
+    this(false);
+  }
 
-  @Test
+  public LuceneCreateIndexTest(boolean remote) {
+    super(remote);
+  }
+
+  @Override
   public void loadAndTest() {
     InputStream stream = ClassLoader.getSystemResourceAsStream("testLuceneIndex.sql");
 
-    db.command(new OCommandScript("sql", getScriptFromStream(stream))).execute();
+    databaseDocumentTx.command(new OCommandScript("sql", getScriptFromStream(stream))).execute();
 
-    db.command(new OCommandSQL(
-        "create index Song.title on Song (title) FULLTEXT ENGINE LUCENE METADATA {\"analyzer\":\"" + StandardAnalyzer.class
-            .getName() + "\"}")).execute();
-    db.command(new OCommandSQL(
-        "create index Song.author on Song (author) FULLTEXT ENGINE LUCENE METADATA {\"analyzer\":\"" + StandardAnalyzer.class
-            .getName() + "\"}")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index Song.title on Song (title) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index Song.author on Song (author) FULLTEXT ENGINE LUCENE")).execute();
 
     ODocument doc = new ODocument("Song");
 
     doc.field("title", "Local");
     doc.field("author", "Local");
 
-    db.save(doc);
-    testMetadata();
+    databaseDocumentTx.save(doc);
     assertQuery();
 
     assertNewQuery();
 
-    db.close();
+    databaseDocumentTx.close();
 
-    db.open("admin", "admin");
+    databaseDocumentTx.open("admin", "admin");
 
     assertQuery();
 
     assertNewQuery();
-  }
-
-  protected void testMetadata() {
-    final ODocument index = db.getMetadata().getIndexManager().getIndex("Song.title").getMetadata();
-
-    Assert.assertEquals(index.field("analyzer"), StandardAnalyzer.class.getName());
   }
 
   protected void assertQuery() {
-    List<ODocument> docs = db.query(new OSQLSynchQuery<ODocument>("select * from Song where title LUCENE \"mountain\""));
+    List<ODocument> docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>(
+        "select * from Song where [title] LUCENE \"(title:mountain)\""));
 
-    Assert.assertEquals(4, docs.size());
+    Assert.assertEquals(docs.size(), 4);
 
-    docs = db.query(new OSQLSynchQuery<ODocument>("select * from Song where author LUCENE \"Fabbio\""));
+    docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>("select * from Song where [author] LUCENE \"(author:Fabbio)\""));
 
-    Assert.assertEquals(87, docs.size());
+    Assert.assertEquals(docs.size(), 87);
 
-    System.out.println("-------------");
-    String query = "select * from Song where title LUCENE \"mountain\" and author LUCENE \"Fabbio\"  ";
-    //String query = "select * from Song where [title] LUCENE \"(title:mountain)\"  and author = 'Fabbio'";
-    docs = db.query(new OSQLSynchQuery<ODocument>(query));
-    Assert.assertEquals(1, docs.size());
+    // not WORK BECAUSE IT USES only the first index
+    // String query = "select * from Song where [title] LUCENE \"(title:mountain)\"  and [author] LUCENE \"(author:Fabbio)\""
+    String query = "select * from Song where [title] LUCENE \"(title:mountain)\"  and author = 'Fabbio'";
+    docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>(query));
 
-    query = "select * from Song where title LUCENE \"mountain\"  and author = 'Fabbio'";
-    docs = db.query(new OSQLSynchQuery<ODocument>(query));
-
-    Assert.assertEquals(1, docs.size());
+    Assert.assertEquals(docs.size(), 1);
   }
 
   protected void assertNewQuery() {
 
-    List<ODocument> docs = db.query(new OSQLSynchQuery<ODocument>("select * from Song where [title] LUCENE \"(title:Local)\""));
+    List<ODocument> docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>(
+        "select * from Song where [title] LUCENE \"(title:Local)\""));
 
-    Assert.assertEquals(1, docs.size());
+    Assert.assertEquals(docs.size(), 1);
   }
 
+  @BeforeClass
+  @Override
+  public void init() {
+    initDB();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
+    OClass v = schema.getClass("V");
+    OClass song = schema.createClass("Song");
+    song.setSuperClass(v);
+    song.createProperty("title", OType.STRING);
+    song.createProperty("author", OType.STRING);
+  }
+
+  @Override
+  protected String getDatabaseName() {
+    return "createIndex";
+  }
 }

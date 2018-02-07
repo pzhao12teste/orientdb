@@ -1,23 +1,6 @@
-/**
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 	http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * For more information: http://orientdb.com
- */
 package com.orientechnologies.orient.jdbc;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import org.junit.Test;
@@ -28,9 +11,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 
-public class OrientJdbcStatementDMLtest extends OrientJdbcDbPerMethodTemplateTest {
+public class OrientJdbcStatementDMLtest extends OrientJdbcBaseTest {
 
   @Test
   public void shouldInsertANewItem() throws Exception {
@@ -38,18 +24,18 @@ public class OrientJdbcStatementDMLtest extends OrientJdbcDbPerMethodTemplateTes
     Date date = new Date(System.currentTimeMillis());
 
     Statement stmt = conn.createStatement();
-    int updated = stmt.executeUpdate(
-        "INSERT into Item (stringKey, intKey, text, length, date) values ('100','100','dummy text','10','" + date.toString()
-            + "')");
+    int updated = stmt
+        .executeUpdate("INSERT into Item (stringKey, intKey, text, length, date) values ('100','100','dummy text','10','"
+            + date.toString() + "')");
 
-    assertThat(updated).isEqualTo(1);
+    assertThat(updated, equalTo(1));
 
     stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery("SELECT stringKey, intKey, text, length, date FROM Item where intKey = '100' ");
     rs.next();
-    assertThat(rs.getInt("intKey")).isEqualTo(100);
-    assertThat(rs.getString("stringKey")).isEqualTo("100");
-    assertThat(rs.getDate("date").toString()).isEqualTo(date.toString());
+    assertThat(rs.getInt("intKey"), equalTo(100));
+    assertThat(rs.getString("stringKey"), equalTo("100"));
+    assertThat(rs.getDate("date").toString(), equalTo(date.toString()));
 
   }
 
@@ -59,28 +45,29 @@ public class OrientJdbcStatementDMLtest extends OrientJdbcDbPerMethodTemplateTes
     Statement stmt = conn.createStatement();
     int updated = stmt.executeUpdate("UPDATE Item set text = 'UPDATED'  WHERE intKey = '10'");
 
-    assertThat(stmt.getMoreResults()).isFalse();
-    assertThat(updated).isEqualTo(1);
+    assertThat(stmt.getMoreResults(), is(false));
+    assertThat(updated, equalTo(1));
 
     stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery("SELECT stringKey, intKey, text, length, date FROM Item where intKey = '10' ");
     rs.next();
-    assertThat(rs.getString("text")).isEqualTo("UPDATED");
+    assertThat(rs.getString("text"), equalTo("UPDATED"));
 
   }
 
   @Test
   public void shouldDeleteAnItem() throws Exception {
 
+
     Statement stmt = conn.createStatement();
     int updated = stmt.executeUpdate("DELETE FROM Item WHERE intKey = '10'");
 
-    assertThat(stmt.getMoreResults()).isFalse();
-    assertThat(updated).isEqualTo(1);
+    assertThat(stmt.getMoreResults(), is(false));
+    assertEquals(1, updated);
 
     stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery("SELECT stringKey, intKey, text, length, date FROM Item where intKey = '10' ");
-    assertThat(rs.next()).isFalse();
+    assertThat(rs.next(), is(false));
 
   }
 
@@ -96,18 +83,18 @@ public class OrientJdbcStatementDMLtest extends OrientJdbcDbPerMethodTemplateTes
     stmt.close();
 
     // double value test pattern?
-    ODatabaseDocument database = conn.getDatabase();
-    assertThat(database.getClusterIdByName("account")).isNotNull();
+    ODatabaseDocumentTx database = conn.getDatabase();
+    assertThat(database.getClusterIdByName("account"), notNullValue());
     OClass account = database.getMetadata().getSchema().getClass("Account");
-    assertThat(account).isNotNull();
-    assertThat(account.getProperty("id").getType()).isEqualTo(OType.INTEGER);
-    assertThat(account.getProperty("birthDate").getType()).isEqualTo(OType.DATE);
-    assertThat(account.getProperty("binary").getType()).isEqualTo(OType.BINARY);
+    assertThat(account, notNullValue());
+    assertThat(account.getProperty("id").getType(), equalTo(OType.INTEGER));
+    assertThat(account.getProperty("birthDate").getType(), equalTo(OType.DATE));
+    assertThat(account.getProperty("binary").getType(), equalTo(OType.BINARY));
 
   }
 
   @Test
-  public void shouldCreateClassWithBatchCommand() throws IOException, SQLException {
+  public void shoulCreateClassWithBatchCommand() throws IOException, SQLException {
 
     Statement stmt = conn.createStatement();
 
@@ -115,17 +102,17 @@ public class OrientJdbcStatementDMLtest extends OrientJdbcDbPerMethodTemplateTes
     stmt.addBatch("CREATE PROPERTY Account.id INTEGER ");
     stmt.addBatch("CREATE PROPERTY Account.birthDate DATE ");
     stmt.addBatch("CREATE PROPERTY Account.binary BINARY ");
-    assertThat(stmt.executeBatch()).hasSize(4);
+    assertThat(stmt.executeBatch().length, equalTo(4));
     stmt.close();
 
     // double value test pattern?
-    ODatabaseDocument database = conn.getDatabase();
-    assertThat(database.getClusterIdByName("account")).isNotNull();
+    ODatabaseDocumentTx database = conn.getDatabase();
+    assertThat(database.getClusterIdByName("account"), notNullValue());
     OClass account = database.getMetadata().getSchema().getClass("Account");
-    assertThat(account).isNotNull();
-    assertThat(account.getProperty("id").getType()).isEqualTo(OType.INTEGER);
-    assertThat(account.getProperty("birthDate").getType()).isEqualTo(OType.DATE);
-    assertThat(account.getProperty("binary").getType()).isEqualTo(OType.BINARY);
+    assertThat(account, notNullValue());
+    assertThat(account.getProperty("id").getType(), equalTo(OType.INTEGER));
+    assertThat(account.getProperty("birthDate").getType(), equalTo(OType.DATE));
+    assertThat(account.getProperty("binary").getType(), equalTo(OType.BINARY));
 
   }
 

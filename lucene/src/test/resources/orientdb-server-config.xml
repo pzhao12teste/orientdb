@@ -25,7 +25,7 @@
                 <parameter value="true" name="profilerManaged"/>
             </parameters>
         </handler>
-        <!--<handler class="com.orientechnologies.lucene.OLuceneSpatialIndexPlugin">-->
+        <!--<handler class="com.orientechnologies.lucene.OLuceneIndexPlugin">-->
 
         <!--</handler>-->
         <handler class="com.orientechnologies.orient.server.handler.OAutomaticBackup">
@@ -81,8 +81,8 @@
         <user resources="connect,server.listDatabases" password="guest" name="guest"/>
     </users>
     <properties>
+        <entry name="cache.level1.enabled" value="true"/>
         <entry name="log.console.level" value="info"/>
         <entry name="log.file.level" value="fine"/>
     </properties>
-    <isAfterFirstTime>true</isAfterFirstTime>
 </orient-server>

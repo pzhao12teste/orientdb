@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Collection;
 
@@ -34,45 +35,63 @@ import java.util.Collection;
  * Created by enricorisa on 28/06/14.
  */
 
+@Test(groups = "embedded")
 public class LuceneInsertUpdateSingleDocumentNoTxTest extends BaseLuceneTest {
 
   public LuceneInsertUpdateSingleDocumentNoTxTest() {
     super();
   }
 
-  @Before
+  public LuceneInsertUpdateSingleDocumentNoTxTest(boolean remote) {
+    super();
+  }
+
+  @Override
+  protected String getDatabaseName() {
+    return "insertUpdateTransaction";
+  }
+
+  @BeforeClass
   public void init() {
-    OSchema schema = db.getMetadata().getSchema();
+    initDB();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
 
-    OClass oClass = schema.createClass("City");
-    oClass.createProperty("name", OType.STRING);
-    db.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+    if (schema.getClass("City") == null) {
+      OClass oClass = schema.createClass("City");
+      oClass.createProperty("name", OType.STRING);
+    }
+    databaseDocumentTx.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
 
+  }
+
+  @AfterClass
+  public void deInit() {
+    deInitDB();
   }
 
   @Test
   public void testInsertUpdateTransactionWithIndex() throws Exception {
 
-    db.close();
-    db.open("admin", "admin");
-    OSchema schema = db.getMetadata().getSchema();
+    databaseDocumentTx.close();
+    databaseDocumentTx.open("admin", "admin");
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
     schema.reload();
     ODocument doc = new ODocument("City");
     doc.field("name", "");
     ODocument doc1 = new ODocument("City");
     doc1.field("name", "");
-    doc = db.save(doc);
-    doc1 = db.save(doc1);
+    doc = databaseDocumentTx.save(doc);
+    doc1 = databaseDocumentTx.save(doc1);
 
-    doc = db.load(doc);
-    doc1 = db.load(doc1);
+    doc = databaseDocumentTx.load(doc);
+    doc1 = databaseDocumentTx.load(doc1);
     doc.field("name", "Rome");
     doc1.field("name", "Rome");
-    db.save(doc);
-    db.save(doc1);
+    databaseDocumentTx.save(doc);
+    databaseDocumentTx.save(doc1);
     OIndex idx = schema.getClass("City").getClassIndex("City.name");
     Collection<?> coll = (Collection<?>) idx.get("Rome");
-    Assert.assertEquals(2, coll.size());
-    Assert.assertEquals(3, idx.getSize());
+    Assert.assertEquals(coll.size(), 2);
+    Assert.assertEquals(idx.getSize(), 2);
   }
 }

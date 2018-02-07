@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ * Copyright 2012 Luca Molino (molino.luca--AT--gmail.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,23 @@ package com.orientechnologies.orient.core.sql;
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.common.util.OPair;
 import com.orientechnologies.orient.core.config.OGlobalConfiguration;
-import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.storage.OCluster;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * @author Luca Molino (molino.luca--at--gmail.com)
- *
+ * @author luca.molino
+ * 
  */
 public abstract class OCommandExecutorSQLSetAware extends OCommandExecutorSQLAbstract {
 
@@ -77,47 +80,17 @@ public abstract class OCommandExecutorSQLSetAware extends OCommandExecutorSQLAbs
 
   protected OClass extractClassFromTarget(String iTarget) {
     // CLASS
-    if (!iTarget.toUpperCase(Locale.ENGLISH).startsWith(OCommandExecutorSQLAbstract.CLUSTER_PREFIX)
+    if (!iTarget.startsWith(OCommandExecutorSQLAbstract.CLUSTER_PREFIX)
         && !iTarget.startsWith(OCommandExecutorSQLAbstract.INDEX_PREFIX)) {
 
-      if (iTarget.toUpperCase(Locale.ENGLISH).startsWith(OCommandExecutorSQLAbstract.CLASS_PREFIX))
+      if (iTarget.startsWith(OCommandExecutorSQLAbstract.CLASS_PREFIX))
         // REMOVE CLASS PREFIX
         iTarget = iTarget.substring(OCommandExecutorSQLAbstract.CLASS_PREFIX.length());
 
       if (iTarget.charAt(0) == ORID.PREFIX)
-        return getDatabase().getMetadata().getSchema().getClassByClusterId(new ORecordId(iTarget).getClusterId());
+        return getDatabase().getMetadata().getSchema().getClassByClusterId(new ORecordId(iTarget).clusterId);
 
       return getDatabase().getMetadata().getSchema().getClass(iTarget);
-    }
-    //CLUSTER
-    if (iTarget.toUpperCase(Locale.ENGLISH).startsWith(OCommandExecutorSQLAbstract.CLUSTER_PREFIX)) {
-      String clusterName = iTarget.substring(OCommandExecutorSQLAbstract.CLUSTER_PREFIX.length()).trim();
-      ODatabaseDocumentInternal db = getDatabase();
-      if(clusterName.startsWith("[") && clusterName.endsWith("]")) {
-        String[] clusterNames = clusterName.substring(1, clusterName.length()-1).split(",");
-        OClass candidateClass = null;
-        for(String cName:clusterNames){
-          OCluster aCluster = db.getStorage().getClusterByName(cName.trim());
-          if(aCluster == null){
-            return null;
-          }
-          OClass aClass = db.getMetadata().getSchema().getClassByClusterId(aCluster.getId());
-          if(aClass == null){
-            return null;
-          }
-          if(candidateClass == null || candidateClass.equals(aClass) || candidateClass.isSubClassOf(aClass)){
-            candidateClass = aClass;
-          }else if(!candidateClass.isSuperClassOf(aClass)){
-            return null;
-          }
-        }
-        return candidateClass;
-      } else {
-        OCluster cluster = db.getStorage().getClusterByName(clusterName);
-        if (cluster != null) {
-          return db.getMetadata().getSchema().getClassByClusterId(cluster.getId());
-        }
-      }
     }
     return null;
   }
@@ -213,13 +186,13 @@ public abstract class OCommandExecutorSQLSetAware extends OCommandExecutorSQLAbs
 
   @Override
   public long getDistributedTimeout() {
-    return getDatabase().getConfiguration().getValueAsLong(OGlobalConfiguration.DISTRIBUTED_COMMAND_TASK_SYNCH_TIMEOUT);
+    return OGlobalConfiguration.DISTRIBUTED_COMMAND_TASK_SYNCH_TIMEOUT.getValueAsLong();
   }
 
   protected Object getFieldValueCountingParameters(String fieldValue) {
     if (fieldValue.trim().equals("?"))
       parameterCounter++;
-    return OSQLHelper.parseValue(this, fieldValue, context, true);
+    return OSQLHelper.parseValue(this, fieldValue, context);
   }
 
   protected ODocument parseJSON() {

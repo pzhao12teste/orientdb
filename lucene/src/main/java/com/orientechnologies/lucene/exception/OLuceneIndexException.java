@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ * Copyright 2014 Orient Technologies.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,20 @@
 
 package com.orientechnologies.lucene.exception;
 
-import com.orientechnologies.common.exception.OException;
 
-public class OLuceneIndexException extends OException {
+public class OLuceneIndexException extends Exception {
+  public OLuceneIndexException() {
+  }
 
   public OLuceneIndexException(String message) {
     super(message);
   }
 
+  public OLuceneIndexException(Throwable cause) {
+    super(cause);
+  }
+
+  public OLuceneIndexException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

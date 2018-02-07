@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -19,49 +19,99 @@
 package com.orientechnologies.lucene.test;
 
 import com.orientechnologies.orient.core.command.script.OCommandScript;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OSchema;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 /**
  * Created by enricorisa on 19/09/14.
  */
+@Test(groups = "embedded")
 public class LuceneSingleFieldEmbeddedTest extends BaseLuceneTest {
+
+  public LuceneSingleFieldEmbeddedTest() {
+    super();
+  }
+
+  public LuceneSingleFieldEmbeddedTest(boolean remote) {
+    super();
+  }
 
   @Test
   public void loadAndTest() {
 
-    List<ODocument> docs = db.query(new OSQLSynchQuery<ODocument>("select * from Song where [title] LUCENE \"(title:mountain)\""));
+    InputStream stream = ClassLoader.getSystemResourceAsStream("testLuceneIndex.sql");
+
+    databaseDocumentTx.command(new OCommandScript("sql", getScriptFromStream(stream))).execute();
+
+    List<ODocument> docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>(
+        "select * from Song where [title] LUCENE \"(title:mountain)\""));
 
     Assert.assertEquals(docs.size(), 4);
 
-    docs = db.query(new OSQLSynchQuery<ODocument>("select * from Song where [author] LUCENE \"(author:Fabbio)\""));
+    docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>("select * from Song where [author] LUCENE \"(author:Fabbio)\""));
 
     Assert.assertEquals(docs.size(), 87);
 
     // not WORK BECAUSE IT USES only the first index
     // String query = "select * from Song where [title] LUCENE \"(title:mountain)\"  and [author] LUCENE \"(author:Fabbio)\""
     String query = "select * from Song where [title] LUCENE \"(title:mountain)\"  and author = 'Fabbio'";
-    docs = db.query(new OSQLSynchQuery<ODocument>(query));
+    docs = databaseDocumentTx.query(new OSQLSynchQuery<ODocument>(query));
 
     Assert.assertEquals(docs.size(), 1);
   }
 
-  @Before
+  @BeforeClass
   public void init() {
-    InputStream stream = ClassLoader.getSystemResourceAsStream("testLuceneIndex.sql");
+    initDB();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
+    OClass v = schema.getClass("V");
+    OClass song = schema.createClass("Song");
+    song.setSuperClass(v);
+    song.createProperty("title", OType.STRING);
+    song.createProperty("author", OType.STRING);
 
-    db.command(new OCommandScript("sql", getScriptFromStream(stream))).execute();
-
-    db.command(new OCommandSQL("create index Song.title on Song (title) FULLTEXT ENGINE LUCENE")).execute();
-    db.command(new OCommandSQL("create index Song.author on Song (author) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index Song.title on Song (title) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index Song.author on Song (author) FULLTEXT ENGINE LUCENE")).execute();
 
   }
 
+  @AfterClass
+  public void deInit() {
+    deInitDB();
+  }
+
+  protected String getScriptFromStream(InputStream in) {
+    String script = "";
+    try {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+      StringBuilder out = new StringBuilder();
+      String line;
+      while ((line = reader.readLine()) != null) {
+        out.append(line + "\n");
+      }
+      script = out.toString();
+      reader.close();
+    } catch (Exception e) {
+
+    }
+    return script;
+  }
+
+  @Override
+  protected String getDatabaseName() {
+    return "singleField";
+  }
 }

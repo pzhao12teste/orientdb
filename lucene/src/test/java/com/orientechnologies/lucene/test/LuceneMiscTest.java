@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2015 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,150 +18,97 @@
 
 package com.orientechnologies.lucene.test;
 
+import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.OEdge;
-import com.orientechnologies.orient.core.record.OVertex;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.junit.Assert;
-import org.junit.Test;
+import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx;
+import com.tinkerpop.blueprints.impls.orient.OrientVertex;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Created by Enrico Risa on 18/09/15.
+ * Created by Enrico Risa on 12/10/15.
  */
-public class LuceneMiscTest extends BaseLuceneTest {
 
-  // TODO Re-enable when removed check syntax on ODB
-  public void testDoubleLucene() {
-
-    db.command(new OCommandSQL("create class Test extends V")).execute();
-    db.command(new OCommandSQL("create property Test.attr1 string")).execute();
-    db.command(new OCommandSQL("create index Test.attr1 on Test (attr1) fulltext engine lucene")).execute();
-    db.command(new OCommandSQL("create property Test.attr2 string")).execute();
-    db.command(new OCommandSQL("create index Test.attr2 on Test (attr2) fulltext engine lucene")).execute();
-    db.command(new OCommandSQL("insert into Test set attr1='foo', attr2='bar'")).execute();
-    db.command(new OCommandSQL("insert into Test set attr1='bar', attr2='foo'")).execute();
-
-    List<ODocument> results = db.command(new OCommandSQL("select from Test where attr1 lucene 'foo*' OR attr2 lucene 'foo*'"))
-        .execute();
-    Assert.assertEquals(2, results.size());
-
-    results = db.command(new OCommandSQL("select from Test where attr1 lucene 'bar*' OR attr2 lucene 'bar*'")).execute();
-
-    Assert.assertEquals(2, results.size());
-
-    results = db.command(new OCommandSQL("select from Test where attr1 lucene 'foo*' AND attr2 lucene 'bar*'")).execute();
-
-    Assert.assertEquals(1, results.size());
-
-    results = db.command(new OCommandSQL("select from Test where attr1 lucene 'bar*' AND attr2 lucene 'foo*'")).execute();
-
-    Assert.assertEquals(1, results.size());
-
-  }
-
-  // TODO Re-enable when removed check syntax on ODB
-  @Test
-  public void testSubLucene() {
-
-    db.command(new OCommandSQL("create class Person extends V")).execute();
-
-    db.command(new OCommandSQL("create property Person.name string")).execute();
-
-    db.command(new OCommandSQL("create index Person.name on Person (name) fulltext engine lucene")).execute();
-
-    db.command(new OCommandSQL("insert into Person set name='Enrico', age=18")).execute();
-
-    OSQLSynchQuery query = new OSQLSynchQuery("select  from (select from Person where age = 18) where name lucene 'Enrico'");
-    List results = db.command(query).execute();
-    Assert.assertEquals(1, results.size());
-
-    // WITH PROJECTION does not work as the class is missing
-    query = new OSQLSynchQuery("select  from (select name  from Person where age = 18) where name lucene 'Enrico'");
-    results = db.command(query).execute();
-    Assert.assertEquals(0, results.size());
-
-  }
-
-  @Test
-  public void testNamedParams() {
-
-    db.command(new OCommandSQL("create class Test extends V")).execute();
-
-    db.command(new OCommandSQL("create property Test.attr1 string")).execute();
-
-    db.command(new OCommandSQL("create index Test.attr1 on Test (attr1) fulltext engine lucene")).execute();
-
-    db.command(new OCommandSQL("insert into Test set attr1='foo', attr2='bar'")).execute();
-
-    OSQLSynchQuery query = new OSQLSynchQuery("select from Test where attr1 lucene :name");
-    Map params = new HashMap();
-    params.put("name", "FOO or");
-    List results = db.command(query).execute(params);
-    Assert.assertEquals(1, results.size());
-  }
+@Test(groups = "embedded")
+public class LuceneMiscTest {
 
   @Test
   public void dottedNotationTest() {
 
-    OSchema schema = db.getMetadata().getSchema();
-    OClass v = schema.getClass("V");
-    OClass e = schema.getClass("E");
-    OClass author = schema.createClass("Author", v);
-    author.createProperty("name", OType.STRING);
+    OrientGraphNoTx db = new OrientGraphNoTx("memory:dotted");
 
-    OClass song = schema.createClass("Song", v);
-    song.createProperty("title", OType.STRING);
+    try {
+      OSchema schema = db.getRawGraph().getMetadata().getSchema();
+      OClass v = schema.getClass("V");
+      OClass e = schema.getClass("E");
+      OClass author = schema.createClass("Author");
+      author.setSuperClass(v);
+      author.createProperty("name", OType.STRING);
 
-    OClass authorOf = schema.createClass("AuthorOf", e);
-    authorOf.createProperty("in", OType.LINK, song);
-    db.commit();
+      OClass song = schema.createClass("Song");
+      song.setSuperClass(v);
+      song.createProperty("title", OType.STRING);
 
-    db.command(new OCommandSQL("create index AuthorOf.in on AuthorOf (in) NOTUNIQUE")).execute();
-    db.command(new OCommandSQL("create index Song.title on Song (title) FULLTEXT ENGINE LUCENE")).execute();
+      OClass authorOf = schema.createClass("AuthorOf");
+      authorOf.createProperty("in", OType.LINK, song);
+      authorOf.setSuperClass(e);
 
-    OVertex authorVertex = db.newVertex("Author");
-    authorVertex.setProperty("name", "Bob Dylan");
-    db.save(authorVertex);
+      db.command(new OCommandSQL("create index AuthorOf.in on AuthorOf (in) NOTUNIQUE")).execute();
+      db.command(new OCommandSQL("create index Song.title on Song (title) FULLTEXT ENGINE LUCENE")).execute();
 
-    OVertex songVertex = db.newVertex("Song");
-    songVertex.setProperty("title", "hurricane");
-    db.save(songVertex);
-    OEdge edge = authorVertex.addEdge(songVertex, "AuthorOf");
-    db.save(edge);
+      OrientVertex authorVertex = db.addVertex("class:Author", new String[] { "name", "Bob Dylan" });
+      OrientVertex songVertex = db.addVertex("class:Song", new String[] { "title", "hurricane" });
 
-    List<Object> results = db.command(new OCommandSQL("select from AuthorOf")).execute();
-    Assert.assertEquals(results.size(), 1);
+      authorVertex.addEdge("AuthorOf", songVertex);
 
-    results = db.command(new OCommandSQL("select from AuthorOf where in.title lucene 'hurricane'")).execute();
+      List<Object> results = db.getRawGraph().command(new OCommandSQL("select from AuthorOf")).execute();
+      Assert.assertEquals(results.size(), 1);
 
-    System.out.println("results = " + results);
-    Assert.assertEquals(results.size(), 1);
+      results = db.getRawGraph().command(new OCommandSQL("select from AuthorOf where in.title lucene 'hurricane'")).execute();
+
+      Assert.assertEquals(results.size(), 1);
+    } finally {
+      db.drop();
+    }
   }
 
-  @Test
-  public void testUnderscoreField() {
+  @Test(expectedExceptions = OCommandExecutionException.class)
+  public void executionExceptionTest() {
 
-    db.command(new OCommandSQL("create class Test extends V")).execute();
+    OrientGraphNoTx db = new OrientGraphNoTx("memory:dotted");
 
-    db.command(new OCommandSQL("create property V._attr1 string")).execute();
+    try {
+      OSchema schema = db.getRawGraph().getMetadata().getSchema();
+      OClass v = schema.getClass("V");
+      OClass e = schema.getClass("E");
+      OClass author = schema.createClass("Author");
+      author.setSuperClass(v);
+      author.createProperty("name", OType.STRING);
 
-    db.command(new OCommandSQL("create index V._attr1 on V (_attr1) fulltext engine lucene")).execute();
+      OClass song = schema.createClass("Song");
+      song.setSuperClass(v);
+      song.createProperty("title", OType.STRING);
 
-    db.command(new OCommandSQL("insert into Test set _attr1='anyPerson', attr2='bar'")).execute();
+      OClass authorOf = schema.createClass("AuthorOf");
+      authorOf.createProperty("in", OType.LINK, song);
+      authorOf.setSuperClass(e);
 
-    OSQLSynchQuery query = new OSQLSynchQuery("select from Test where _attr1 lucene :name");
-    Map params = new HashMap();
-    params.put("name", "anyPerson");
-    List results = db.command(query).execute(params);
-    Assert.assertEquals(results.size(), 1);
+      db.command(new OCommandSQL("create index Song.title on Song (title) FULLTEXT ENGINE LUCENE")).execute();
 
+      OrientVertex authorVertex = db.addVertex("class:Author", new String[] { "name", "Bob Dylan" });
+      OrientVertex songVertex = db.addVertex("class:Song", new String[] { "title", "hurricane" });
+
+      authorVertex.addEdge("AuthorOf", songVertex);
+
+      db.getRawGraph().command(new OCommandSQL("select from Song where name lucene 'hurricane'")).execute();
+
+    } finally {
+      db.drop();
+    }
   }
 }

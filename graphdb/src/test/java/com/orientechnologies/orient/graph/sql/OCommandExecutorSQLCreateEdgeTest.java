@@ -1,7 +1,6 @@
 package com.orientechnologies.orient.graph.sql;
 
-import com.orientechnologies.orient.core.command.OCommandManager;
-import com.orientechnologies.orient.core.command.script.OCommandExecutorScript;
+import com.orientechnologies.orient.core.Orient;
 import com.orientechnologies.orient.core.command.script.OCommandScript;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.db.record.ridbag.ORidBag;
@@ -32,8 +31,8 @@ public class OCommandExecutorSQLCreateEdgeTest {
 
   @Before
   public void setUp() throws Exception {
-    OCommandManager.instance().registerExecutor(OCommandScript.class, OCommandExecutorScript.class);
-    db = new ODatabaseDocumentTx("memory:" + OCommandExecutorSQLCreateEdgeTest.class.getSimpleName());
+    db = Orient.instance().getDatabaseFactory()
+        .createDatabase("graph", "memory:" + OCommandExecutorSQLCreateEdgeTest.class.getSimpleName());
 
     if (db.exists()) {
       db.open("admin", "admin");
@@ -119,11 +118,11 @@ public class OCommandExecutorSQLCreateEdgeTest {
   public void testEdgeConstraints() {
     db.command(
         new OCommandScript("sql", "create class E2 extends E;" + "create property E2.x LONG;" + "create property E2.in LINK;"
-            + "alter property E2.in MANDATORY true;" + "create property E2.out LINK;" + "alter property E2.out MANDATORY true;"
-            + "create class E1 extends E;" + "create property E1.x LONG;" + "alter property E1.x MANDATORY true;"
-            + "create property E1.in LINK;" + "alter property E1.in MANDATORY true;" + "create property E1.out LINK;"
-            + "alter property E1.out MANDATORY true;" + "create class FooType extends V;" + "create property FooType.name STRING;"
-            + "alter property FooType.name MANDATORY true;")).execute();
+            + "alter property E2.in MANDATORY=true;" + "create property E2.out LINK;" + "alter property E2.out MANDATORY=true;"
+            + "create class E1 extends E;" + "create property E1.x LONG;" + "alter property E1.x MANDATORY=true;"
+            + "create property E1.in LINK;" + "alter property E1.in MANDATORY=true;" + "create property E1.out LINK;"
+            + "alter property E1.out MANDATORY=true;" + "create class FooType extends V;" + "create property FooType.name STRING;"
+            + "alter property FooType.name MANDATORY=true;")).execute();
 
     db.command(
         new OCommandScript("sql", "let $v1 = create vertex FooType content {'name':'foo1'};"

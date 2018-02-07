@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2014 OrientDB LTD (info(-at-)orientdb.com)
+ *  * Copyright 2010-2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 
 package com.orientechnologies.orient.graph.blueprints;
 
-import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -128,10 +127,7 @@ public class GraphValidationTest {
   public void edgesCannotBeVertices() {
     OrientGraphNoTx gNoTx = new OrientGraphNoTx(URL, "admin", "admin");
     try {
-      gNoTx.createVertexType("TestV");
-      gNoTx.createEdgeType("TestE");
-
-      OrientVertex v = gNoTx.addVertex("class:TestV");
+      OrientVertex v = gNoTx.addVertex(null);
       OrientVertex loadedV = gNoTx.getVertex(v.getIdentity());
       try {
         OrientEdge e = gNoTx.getEdge(v.getIdentity().toString());
@@ -145,7 +141,7 @@ public class GraphValidationTest {
 
     OrientGraph g = new OrientGraph(URL, "admin", "admin");
     try {
-      OrientVertex v = g.addVertex("class:TestV");
+      OrientVertex v = g.addVertex(null);
       OrientVertex loadedV = g.getVertex(v.getIdentity().toString());
       try {
         OrientEdge e = g.getEdge(v.getIdentity());
@@ -184,43 +180,4 @@ public class GraphValidationTest {
     }
   }
 
-  @Test(expected = OValidationException.class)
-  public void testPropertyReadOnly() {
-    OrientGraphNoTx graphNoTx = new OrientGraphNoTx(URL);
-    OrientVertexType testType = graphNoTx.createVertexType("Test");
-    OProperty prop;
-    prop = testType.createProperty("name", OType.STRING).setReadonly(true);
-    graphNoTx.shutdown();
-
-    Assert.assertTrue(prop.isReadonly()); //this one passes
-
-    OrientGraph graph = new OrientGraph(URL);
-    try {
-      OrientVertex vert1 = graph.addVertex("class:Test", "name", "Sam");
-      graph.commit();
-
-      vert1.setProperty("name", "Ben"); //should throw an exception
-      graph.commit();
-
-      Assert.assertEquals(vert1.getProperty("name"), "Sam");  //fails
-    } finally {
-      graph.shutdown();
-    }
-  }
-
-  @Test
-  public void testNoTxGraphConstraints() {
-    OrientGraphNoTx graphNoTx = new OrientGraphNoTx(URL);
-    OrientVertexType testType = graphNoTx.createVertexType("Test");
-    testType.createProperty("age", OType.INTEGER).setMax("3");
-    OrientVertex vert1 = graphNoTx.addVertex("class:Test", "age", 2);
-
-    try {
-      vert1.setProperty("age", 4);
-    } catch (OValidationException e) {
-      Assert.assertEquals((int) vert1.getProperty("age"), 2); //this fails
-    } finally {
-      graphNoTx.shutdown();
-    }
-  }
 }

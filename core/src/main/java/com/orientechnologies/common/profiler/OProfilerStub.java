@@ -1,6 +1,6 @@
 /*
  *
- *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  *  you may not use this file except in compliance with the License.
@@ -14,91 +14,47 @@
  *  *  See the License for the specific language governing permissions and
  *  *  limitations under the License.
  *  *
- *  * For more information: http://orientdb.com
+ *  * For more information: http://www.orientechnologies.com
  *
  */
 
 package com.orientechnologies.common.profiler;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import com.orientechnologies.orient.core.config.OGlobalConfiguration;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.orientechnologies.orient.core.config.OGlobalConfiguration.PROFILER_MAXVALUES;
-
 public class OProfilerStub extends OAbstractProfiler {
 
-  protected ConcurrentMap<String, Long>                    counters;
-  private   ConcurrentLinkedHashMap<String, AtomicInteger> tips;
-  private   ConcurrentLinkedHashMap<String, Long>          tipsTimestamp;
+  protected Map<String, Long>          counters      = new HashMap<String, Long>();
+  protected Map<String, AtomicInteger> tips          = new HashMap<String, AtomicInteger>();
+  protected Map<String, Long>          tipsTimestamp = new HashMap<String, Long>();
 
   public OProfilerStub() {
   }
-
-  public OProfilerStub(boolean registerListener) {
-    super(registerListener);
-  }
-
 
   public OProfilerStub(final OAbstractProfiler profiler) {
     super(profiler);
   }
 
   @Override
-  public void startup() {
-    counters = new ConcurrentLinkedHashMap.Builder().maximumWeightedCapacity(PROFILER_MAXVALUES.getValueAsInteger()).build();
-    tips = new ConcurrentLinkedHashMap.Builder().maximumWeightedCapacity(PROFILER_MAXVALUES.getValueAsInteger()).build();
-    tipsTimestamp = new ConcurrentLinkedHashMap.Builder().maximumWeightedCapacity(PROFILER_MAXVALUES.getValueAsInteger()).build();
-    super.startup();
-  }
-
-  @Override
-  public void shutdown() {
-
-    if (counters != null) {
-      counters.clear();
-    }
-    if (tips != null) {
-      tips.clear();
-    }
-    if (tipsTimestamp != null) {
-      tipsTimestamp.clear();
-    }
-    super.shutdown();
-  }
-
-  @Override
   protected void setTip(final String iMessage, final AtomicInteger counter) {
-    if (!isRecording()) {
-      //profiler is not started
-      return;
-    }
-
     tips.put(iMessage, counter);
     tipsTimestamp.put(iMessage, System.currentTimeMillis());
   }
 
   @Override
   protected AtomicInteger getTip(final String iMessage) {
-    if (!isRecording()) {
-      //profiler is not started.
-      return null;
-    }
-
-    if (iMessage == null)
-      return null;
-
     return tips.get(iMessage);
-  }
-
-  @Override
-  public boolean isEnterpriseEdition() {
-    return false;
   }
 
   public void configure(final String iConfiguration) {
@@ -112,9 +68,12 @@ public class OProfilerStub extends OAbstractProfiler {
   }
 
   public boolean startRecording() {
-    counters = new ConcurrentLinkedHashMap.Builder().maximumWeightedCapacity(PROFILER_MAXVALUES.getValueAsInteger()).build();
-    tips = new ConcurrentLinkedHashMap.Builder().maximumWeightedCapacity(PROFILER_MAXVALUES.getValueAsInteger()).build();
-    tipsTimestamp = new ConcurrentLinkedHashMap.Builder().maximumWeightedCapacity(PROFILER_MAXVALUES.getValueAsInteger()).build();
+    counters = new ConcurrentLinkedHashMap.Builder()
+        .maximumWeightedCapacity(OGlobalConfiguration.PROFILER_MAXVALUES.getValueAsInteger()).build();
+    tips = new ConcurrentLinkedHashMap.Builder()
+        .maximumWeightedCapacity(OGlobalConfiguration.PROFILER_MAXVALUES.getValueAsInteger()).build();
+    tipsTimestamp = new ConcurrentLinkedHashMap.Builder()
+        .maximumWeightedCapacity(OGlobalConfiguration.PROFILER_MAXVALUES.getValueAsInteger()).build();
 
     if (super.startRecording()) {
       counters.clear();
@@ -133,7 +92,7 @@ public class OProfilerStub extends OAbstractProfiler {
 
   @Override
   public String dump() {
-    if (recordingFrom < 0)
+    if (recordingFrom<0)
       return "<no recording>";
 
     final StringBuilder buffer = new StringBuilder(super.dump());
@@ -230,14 +189,12 @@ public class OProfilerStub extends OAbstractProfiler {
 
   @Override
   public String[] getCountersAsString() {
-    final List<String> keys = new ArrayList<String>(counters.keySet());
-    final String[] result = new String[keys.size()];
-    return keys.toArray(result);
+    return null;
   }
 
   @Override
-  public List<String> getChronos() {
-    return Collections.emptyList();
+  public String[] getChronosAsString() {
+    return null;
   }
 
   @Override
@@ -251,22 +208,12 @@ public class OProfilerStub extends OAbstractProfiler {
   }
 
   @Override
-  public Object getHookValue(final String iName) {
-    return null;
-  }
-
-  @Override
   public String toJSON(String command, final String iPar1) {
     return null;
   }
 
   @Override
   public void resetRealtime(String iText) {
-  }
-
-  @Override
-  public String getStatsAsJson() {
-    return null;
   }
 
   /**

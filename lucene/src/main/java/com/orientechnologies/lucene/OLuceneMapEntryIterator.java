@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ * Copyright 2014 Orient Technologies.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.orientechnologies.lucene;
 
 import com.orientechnologies.common.log.OLogManager;
-import com.orientechnologies.lucene.engine.OLuceneIndexEngineAbstract;
+import com.orientechnologies.lucene.manager.OLuceneIndexManagerAbstract;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.index.OIndexDefinition;
 import org.apache.lucene.document.Document;
@@ -30,9 +30,9 @@ import java.util.Map;
 public class OLuceneMapEntryIterator<K, V> implements Iterator<Map.Entry<K, V>> {
 
   private final OIndexDefinition definition;
-  private final IndexReader      reader;
+  private IndexReader            reader;
 
-  private int currentIdx;
+  private int                    currentIdx;
 
   public OLuceneMapEntryIterator(IndexReader reader, OIndexDefinition definition) {
 
@@ -56,10 +56,10 @@ public class OLuceneMapEntryIterator<K, V> implements Iterator<Map.Entry<K, V>> 
           val += doc.get(field);
         }
       } else {
-        val = doc.get(OLuceneIndexEngineAbstract.KEY);
+        val = doc.get(OLuceneIndexManagerAbstract.KEY);
       }
       final String finalVal = val;
-      final ORecordId id = new ORecordId(doc.get(OLuceneIndexEngineAbstract.RID));
+      final ORecordId id = new ORecordId(doc.get(OLuceneIndexManagerAbstract.RID));
       currentIdx++;
       return new Map.Entry<K, V>() {
         @Override

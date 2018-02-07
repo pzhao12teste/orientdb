@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ * Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * For more information: http://orientdb.com
+ * For more information: http://www.orientechnologies.com
  */
 package com.orientechnologies.orient.jdbc;
-
-import com.orientechnologies.orient.core.record.impl.OBlob;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +25,9 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+
+import com.orientechnologies.orient.core.record.impl.ORecordBytes;
 
 import static java.util.Arrays.asList;
 
@@ -40,19 +39,19 @@ public class OrientBlob implements Blob {
 
   private final List<byte[]> binaryDataChunks;
 
-  private long length;
+  private long               length;
 
-  private byte[] currentChunk;
+  private byte[]             currentChunk;
 
-  private int currentChunkIndex;
+  private int                currentChunkIndex;
 
-  protected OrientBlob(OBlob binaryDataChunk) throws IllegalArgumentException {
-    this(Collections.singletonList(binaryDataChunk));
+  protected OrientBlob(ORecordBytes binaryDataChunk) throws IllegalArgumentException, NullPointerException {
+    this(asList(binaryDataChunk));
   }
 
-  protected OrientBlob(List<OBlob> binaryDataChunks) throws IllegalArgumentException {
-    this.binaryDataChunks = new ArrayList<>(binaryDataChunks.size());
-    for (OBlob binaryDataChunk : binaryDataChunks) {
+  protected OrientBlob(List<ORecordBytes> binaryDataChunks) throws IllegalArgumentException, NullPointerException {
+    this.binaryDataChunks = new ArrayList<byte[]>(binaryDataChunks.size());
+    for (ORecordBytes binaryDataChunk : binaryDataChunks) {
       if (binaryDataChunk == null) {
         throw new IllegalArgumentException("The binary data chunks list cannot hold null chunks");
       } else if (binaryDataChunk.getSize() == 0) {
@@ -62,7 +61,7 @@ public class OrientBlob implements Blob {
         this.binaryDataChunks.add(binaryDataChunk.toStream());
       }
     }
-    this.length = calculateLength();
+    this.length = calculateLenght();
   }
 
   /*
@@ -74,7 +73,7 @@ public class OrientBlob implements Blob {
     return this.length;
   }
 
-  private long calculateLength() {
+  private long calculateLenght() {
     long length = 0;
     for (byte[] binaryDataChunk : binaryDataChunks) {
       length += binaryDataChunk.length;
@@ -91,8 +90,8 @@ public class OrientBlob implements Blob {
     if (pos < 1)
       throw new SQLException("The position of the first byte in the BLOB value to be " + "extracted cannot be less than 1");
     if (length < 0)
-      throw new SQLException(
-          "The number of the consecutive bytes in the BLOB value to " + "be extracted cannot be a negative number");
+      throw new SQLException("The number of the consecutive bytes in the BLOB value to "
+          + "be extracted cannot be a negative number");
 
     int relativeIndex = this.getRelativeIndex(pos);
 
@@ -120,7 +119,7 @@ public class OrientBlob implements Blob {
 
   /**
    * Calculates the index within a binary chunk corresponding to the given absolute position within this BLOB
-   *
+   * 
    * @param pos
    * @return
    */
@@ -228,7 +227,7 @@ public class OrientBlob implements Blob {
 
     private long bytesToBeRead;
 
-    private int positionInTheCurrentChunk;
+    private int  positionInTheCurrentChunk;
 
     public OrientBlobInputStream() {
       bytesToBeRead = OrientBlob.this.length;

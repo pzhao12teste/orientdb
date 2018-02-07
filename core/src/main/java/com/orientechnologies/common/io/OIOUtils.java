@@ -1,6 +1,6 @@
 /*
  *
- *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  *  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  *  *  See the License for the specific language governing permissions and
  *  *  limitations under the License.
  *  *
- *  * For more information: http://orientdb.com
+ *  * For more information: http://www.orientechnologies.com
  *
  */
 package com.orientechnologies.common.io;
@@ -22,10 +22,6 @@ package com.orientechnologies.common.io;
 import com.orientechnologies.common.util.OPatternConst;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -40,6 +36,15 @@ public class OIOUtils {
   public static final long   YEAR     = DAY * 365;
   public static final long   WEEK     = DAY * 7;
   public static final String UTF8_BOM = "\uFEFF";
+
+  public static byte[] toStream(Externalizable iSource) throws IOException {
+    final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    final ObjectOutputStream oos = new ObjectOutputStream(stream);
+    iSource.writeExternal(oos);
+    oos.flush();
+    stream.flush();
+    return stream.toByteArray();
+  }
 
   public static long getTimeAsMillisecs(final Object iSize) {
     if (iSize == null)
@@ -133,17 +138,9 @@ public class OIOUtils {
     return readStreamAsString(new FileInputStream(iFile));
   }
 
-  public static String readFileAsString(final File iFile, Charset iCharset) throws IOException {
-    return readStreamAsString(new FileInputStream(iFile), iCharset);
-  }
-
   public static String readStreamAsString(final InputStream iStream) throws IOException {
-    return readStreamAsString(iStream, StandardCharsets.UTF_8);
-  }
-
-  public static String readStreamAsString(final InputStream iStream, Charset iCharset) throws IOException {
     final StringBuffer fileData = new StringBuffer(1000);
-    final BufferedReader reader = new BufferedReader(new InputStreamReader(iStream, iCharset));
+    final BufferedReader reader = new BufferedReader(new InputStreamReader(iStream));
     try {
       final char[] buf = new char[1024];
       int numRead = 0;
@@ -161,26 +158,6 @@ public class OIOUtils {
       reader.close();
     }
     return fileData.toString();
-
-  }
-
-  public static void writeFile(final File iFile, final String iContent) throws IOException {
-    final FileOutputStream fos = new FileOutputStream(iFile);
-    try {
-      final OutputStreamWriter os = new OutputStreamWriter(fos);
-      try {
-        final BufferedWriter writer = new BufferedWriter(os);
-        try {
-          writer.write(iContent);
-        } finally {
-          writer.close();
-        }
-      } finally {
-        os.close();
-      }
-    } finally {
-      fos.close();
-    }
   }
 
   public static long copyStream(final InputStream in, final OutputStream out, long iMax) throws IOException {
@@ -263,7 +240,7 @@ public class OIOUtils {
         for (int j = 0; j < 4 - hex.length(); j++)
           // Prepend zeros because unicode requires 4 digits
           result.append('0');
-        result.append(hex.toLowerCase(Locale.ENGLISH)); // standard unicode format.
+        result.append(hex.toLowerCase()); // standard unicode format.
         // ostr.append(hex.toLowerCase(Locale.ENGLISH));
       }
     }
@@ -280,8 +257,8 @@ public class OIOUtils {
     if (s == null)
       return false;
 
-    return s.length() > 1 && (s.charAt(0) == '\'' && s.charAt(s.length() - 1) == '\''
-        || s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"');
+    return s.length() > 1
+        && (s.charAt(0) == '\'' && s.charAt(s.length() - 1) == '\'' || s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"');
   }
 
   public static String getStringContent(final Object iValue) {
@@ -293,26 +270,15 @@ public class OIOUtils {
     if (s == null)
       return null;
 
-    if (s.length() > 1 && (s.charAt(0) == '\'' && s.charAt(s.length() - 1) == '\''
-        || s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"'))
+    if (s.length() > 1
+        && (s.charAt(0) == '\'' && s.charAt(s.length() - 1) == '\'' || s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"'))
       return s.substring(1, s.length() - 1);
 
-    if (s.length() > 1 && (s.charAt(0) == '`' && s.charAt(s.length() - 1) == '`'))
+    if (s.length() > 1
+        && (s.charAt(0) == '`' && s.charAt(s.length() - 1) == '`'))
       return s.substring(1, s.length() - 1);
 
     return s;
-  }
-
-  public static String wrapStringContent(final Object iValue, final char iStringDelimiter) {
-    if (iValue == null)
-      return null;
-
-    final String s = iValue.toString();
-
-    if (s == null)
-      return null;
-
-    return iStringDelimiter + s + iStringDelimiter;
   }
 
   public static boolean equals(final byte[] buffer, final byte[] buffer2) {
@@ -334,108 +300,5 @@ public class OIOUtils {
       isLong = isLong & ((c >= '0' && c <= '9'));
     }
     return isLong;
-  }
-
-  public static void readFully(InputStream in, byte[] b, int off, int len) throws IOException {
-    while (len > 0) {
-      int n = in.read(b, off, len);
-
-      if (n == -1) {
-        throw new EOFException();
-      }
-      off += n;
-      len -= n;
-    }
-  }
-
-  public static void readByteBuffer(ByteBuffer buffer, FileChannel channel, long position, boolean throwOnEof) throws IOException {
-    int bytesToRead = buffer.limit();
-
-    int read = 0;
-    while (read < bytesToRead) {
-      buffer.position(read);
-
-      final int r = channel.read(buffer, position + read);
-      if (r < 0)
-        if (throwOnEof)
-          throw new EOFException("End of file is reached");
-        else {
-          buffer.put(new byte[buffer.remaining()]);
-          return;
-        }
-
-      read += r;
-    }
-  }
-
-  public static void readByteBuffer(ByteBuffer buffer, FileChannel channel) throws IOException {
-    int bytesToRead = buffer.limit();
-
-    int read = 0;
-
-    while (read < bytesToRead) {
-      buffer.position(read);
-      final int r = channel.read(buffer);
-
-      if (r < 0)
-        throw new EOFException("End of file is reached");
-
-      read += r;
-    }
-  }
-
-  public static void writeByteBuffer(ByteBuffer buffer, FileChannel channel, long position) throws IOException {
-    int bytesToWrite = buffer.limit();
-
-    int written = 0;
-    while (written < bytesToWrite) {
-      buffer.position(written);
-
-      written += channel.write(buffer, position + written);
-    }
-  }
-
-  public static void writeByteBuffers(ByteBuffer[] buffers, FileChannel channel, long bytesToWrite) throws IOException {
-    long written = 0;
-
-    for (ByteBuffer buffer : buffers) {
-      buffer.position(0);
-    }
-
-    final int bufferLimit = buffers[0].limit();
-
-    while (written < bytesToWrite) {
-      final int bufferIndex = (int) written / bufferLimit;
-
-      written += channel.write(buffers, bufferIndex, buffers.length - bufferIndex);
-    }
-  }
-
-  public static void readByteBuffers(ByteBuffer[] buffers, FileChannel channel, long bytesToRead, boolean throwOnEof)
-      throws IOException {
-    long read = 0;
-
-    for (ByteBuffer buffer : buffers) {
-      buffer.position(0);
-    }
-
-    final int bufferLimit = buffers[0].limit();
-
-    while (read < bytesToRead) {
-      final int bufferIndex = (int) read / bufferLimit;
-
-      final long r = channel.read(buffers, bufferIndex, buffers.length - bufferIndex);
-
-      if (r < 0)
-        if (throwOnEof)
-          throw new EOFException("End of file is reached");
-        else {
-          for (int i = bufferIndex; i < buffers.length; ++i)
-            buffers[i].put(new byte[buffers[i].remaining()]);
-          return;
-        }
-
-      read += r;
-    }
   }
 }

@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 
 package com.orientechnologies.lucene.test;
 
-import com.orientechnologies.lucene.OLuceneIndexFactory;
 import com.orientechnologies.orient.core.command.OCommandOutputListener;
 import com.orientechnologies.orient.core.db.tool.ODatabaseExport;
 import com.orientechnologies.orient.core.db.tool.ODatabaseImport;
@@ -29,79 +28,84 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import static com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE.FULLTEXT;
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * Created by Enrico Risa on 07/07/15.
  */
 public class LuceneExportImportTest extends BaseLuceneTest {
 
-  @Before
-  public void init() {
+  @Override
+  protected String getDatabaseName() {
+    return "importExport";
+  }
 
-    OSchema schema = db.getMetadata().getSchema();
+  @BeforeClass
+  public void init() {
+    initDB();
+
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
     OClass oClass = schema.createClass("City");
 
     oClass.createProperty("name", OType.STRING);
-    db.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
 
     ODocument doc = new ODocument("City");
     doc.field("name", "Rome");
-    db.save(doc);
+    databaseDocumentTx.save(doc);
   }
 
   @Test
   public void testExportImport() {
 
-    String file = "./target/exportTest.json";
+    String property = "java.io.tmpdir";
 
-    List<?> query = db.query(new OSQLSynchQuery<Object>("select from City where name lucene 'Rome'"));
+    String file = System.getProperty(property) + "test.json";
+
+    List<?> query = databaseDocumentTx.query(new OSQLSynchQuery<Object>("select from City where name lucene 'Rome'"));
 
     Assert.assertEquals(query.size(), 1);
-
     try {
-
-      //export
-      new ODatabaseExport(db, file, new OCommandOutputListener() {
+      new ODatabaseExport(databaseDocumentTx, file, new OCommandOutputListener() {
         @Override
         public void onMessage(String s) {
         }
       }).exportDatabase();
-
-      //import
-      db.drop();
-      db.create();
+      databaseDocumentTx.drop();
+      databaseDocumentTx.create();
       GZIPInputStream stream = new GZIPInputStream(new FileInputStream(file + ".gz"));
-      new ODatabaseImport(db, stream, new OCommandOutputListener() {
+      new ODatabaseImport(databaseDocumentTx, stream, new OCommandOutputListener() {
         @Override
         public void onMessage(String s) {
         }
       }).importDatabase();
     } catch (IOException e) {
-      Assert.fail(e.getMessage());
+      e.printStackTrace();
     }
+    long city = databaseDocumentTx.countClass("City");
 
-    assertThat(db.countClass("City")).isEqualTo(1);
-    OIndex<?> index = db.getMetadata().getIndexManager().getIndex("City.name");
+    Assert.assertEquals(city, 1);
 
-    assertThat(index.getType()).isEqualTo(FULLTEXT.toString());
+    OIndex<?> index = databaseDocumentTx.getMetadata().getIndexManager().getIndex("City.name");
 
-    assertThat(index.getAlgorithm()).isEqualTo(OLuceneIndexFactory.LUCENE_ALGORITHM);
+    Assert.assertNotNull(index);
+    Assert.assertEquals(index.getType(), "FULLTEXT");
+//    Assert.assertEquals(index.getAlgorithm(), "LUCENE");
 
-    //redo the query
-    query = db.query(new OSQLSynchQuery<Object>("select from City where name lucene 'Rome'"));
-
-    assertThat(query).hasSize(1);
+    query = databaseDocumentTx.query(new OSQLSynchQuery<Object>("select from City where name lucene 'Rome'"));
+    Assert.assertEquals(query.size(), 1);
   }
 
+  @AfterClass
+  public void deInit() {
+
+  }
 }

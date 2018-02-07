@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,89 +18,78 @@
 
 package com.orientechnologies.lucene.test;
 
-import com.orientechnologies.orient.core.command.script.OCommandScript;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
-import java.io.InputStream;
 import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Created by enricorisa on 28/06/14.
  */
 
+@Test(groups = "embedded")
 public class LuceneInsertDeleteTest extends BaseLuceneTest {
 
-  @Before
-  public void init() {
+  public LuceneInsertDeleteTest() {
+    super();
+  }
 
-    OSchema schema = db.getMetadata().getSchema();
+  public LuceneInsertDeleteTest(boolean remote) {
+    super();
+  }
+
+  @Override
+  protected String getDatabaseName() {
+    return "insertDelete";
+  }
+
+  @BeforeClass
+  public void init() {
+    initDB();
+
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
     OClass oClass = schema.createClass("City");
 
     oClass.createProperty("name", OType.STRING);
-    db.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+  }
+
+  @AfterClass
+  public void deInit() {
+    deInitDB();
   }
 
   @Test
   public void testInsertUpdateWithIndex() throws Exception {
 
-    db.getMetadata().reload();
-    OSchema schema = db.getMetadata().getSchema();
+    databaseDocumentTx.getMetadata().reload();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
 
     ODocument doc = new ODocument("City");
     doc.field("name", "Rome");
-    db.save(doc);
+    databaseDocumentTx.save(doc);
 
     OIndex idx = schema.getClass("City").getClassIndex("City.name");
     Collection<?> coll = (Collection<?>) idx.get("Rome");
-
-    assertThat(coll).hasSize(1);
-    assertThat(idx.getSize()).isEqualTo(2);
-
+    Assert.assertEquals(coll.size(), 1);
+    Assert.assertEquals(idx.getSize(), 1);
     OIdentifiable next = (OIdentifiable) coll.iterator().next();
-    doc = db.load(next.<ORecord>getRecord());
+    doc = databaseDocumentTx.load(next.getRecord());
 
-    db.delete(doc);
+    databaseDocumentTx.delete(doc);
 
     coll = (Collection<?>) idx.get("Rome");
-    assertThat(coll).hasSize(0);
-    assertThat(idx.getSize()).isEqualTo(1);
+    Assert.assertEquals(coll.size(), 0);
+    Assert.assertEquals(idx.getSize(), 0);
 
-  }
-
-  @Test
-  public void testDeleteWithQueryOnClosedIndex() throws Exception {
-
-    InputStream stream = ClassLoader.getSystemResourceAsStream("testLuceneIndex.sql");
-
-    db.command(new OCommandScript("sql", getScriptFromStream(stream))).execute();
-
-    db.command(new OCommandSQL(
-        "create index Song.title on Song (title) FULLTEXT ENGINE LUCENE metadata {'closeAfterInterval':1000 , 'firstFlushAfter':1000 }"))
-        .execute();
-
-
-    List<ODocument> docs = db.query(new OSQLSynchQuery<Object>("select from Song where title lucene 'mountain'"));
-
-    assertThat(docs).hasSize(4);
-    TimeUnit.SECONDS.sleep(5);
-
-    db.command(new OCommandSQL("delete vertex from Song where title lucene 'mountain'")).execute();
-
-    docs = db.query(new OSQLSynchQuery<Object>("select from Song where  title lucene 'mountain'"));
-    assertThat(docs).hasSize(0);
   }
 }

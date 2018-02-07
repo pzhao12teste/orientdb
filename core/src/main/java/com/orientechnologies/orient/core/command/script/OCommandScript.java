@@ -1,6 +1,6 @@
 /*
  *
- *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  *  you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
  *  *  See the License for the specific language governing permissions and
  *  *  limitations under the License.
  *  *
- *  * For more information: http://orientdb.com
+ *  * For more information: http://www.orientechnologies.com
  *
  */
 package com.orientechnologies.orient.core.command.script;
 
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
-import com.orientechnologies.orient.core.command.OCommandRequestText;
 import com.orientechnologies.orient.core.command.OCommandRequestTextAbstract;
 import com.orientechnologies.orient.core.exception.OSerializationException;
 import com.orientechnologies.orient.core.serialization.OMemoryStream;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
-import com.orientechnologies.orient.core.serialization.serializer.record.ORecordSerializer;
 
 import javax.script.CompiledScript;
 
@@ -34,7 +32,7 @@ import javax.script.CompiledScript;
  * 
  * 
  * @see OCommandExecutorScript
- * @author Luca Garulli (l.garulli--(at)--orientdb.com)
+ * @author Luca Garulli
  * 
  */
 @SuppressWarnings("serial")
@@ -74,7 +72,7 @@ public class OCommandScript extends OCommandRequestTextAbstract {
     return this;
   }
 
-  public OCommandRequestText fromStream(byte[] iStream, ORecordSerializer serializer) throws OSerializationException {
+  public OSerializableStream fromStream(byte[] iStream) throws OSerializationException {
     final OMemoryStream buffer = new OMemoryStream(iStream);
     language = buffer.getAsString();
 
@@ -83,12 +81,12 @@ public class OCommandScript extends OCommandRequestTextAbstract {
     final String value = buffer.getAsString();
     try {
       executionMode = OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE.valueOf(value);
-    } catch (IllegalArgumentException ignore) {
+    } catch (IllegalArgumentException e) {
       // OLD VERSION: RESET TO THE OLD POSITION
       buffer.setPosition(currPosition);
     }
 
-    fromStream(buffer,serializer);
+    fromStream(buffer);
     return this;
   }
 

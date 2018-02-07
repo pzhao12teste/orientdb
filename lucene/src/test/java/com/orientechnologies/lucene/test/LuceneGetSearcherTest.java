@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -25,36 +25,51 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+
+import java.io.IOException;
 
 /**
  * Created by Enrico Risa on 29/04/15.
  */
 public class LuceneGetSearcherTest extends BaseLuceneTest {
+  @Override
+  protected String getDatabaseName() {
+    return "getSearcher";
+  }
 
-  @Before
+  @BeforeClass
   public void init() {
-    OSchema schema = db.getMetadata().getSchema();
+    initDB();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
     OClass v = schema.getClass("V");
     OClass song = schema.createClass("Person");
     song.setSuperClass(v);
     song.createProperty("isDeleted", OType.BOOLEAN);
 
-    db.command(new OCommandSQL("create index Person.isDeleted on Person (isDeleted) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index Person.isDeleted on Person (isDeleted) FULLTEXT ENGINE LUCENE"))
+        .execute();
 
   }
 
-  @Test
+  @AfterClass
+  public void deInit() {
+    deInitDB();
+  }
+
   public void testSearcherInstance() {
 
-    OIndex<?> index = db.getMetadata().getIndexManager().getIndex("Person.isDeleted");
+    OIndex<?> index = databaseDocumentTx.getMetadata().getIndexManager().getIndex("Person.isDeleted");
 
     Assert.assertEquals(true, index.getInternal() instanceof OLuceneIndexNotUnique);
 
     OLuceneIndexNotUnique idx = (OLuceneIndexNotUnique) index.getInternal();
 
-    Assert.assertNotNull(idx.searcher());
-
+    try {
+      Assert.assertNotNull(idx.searcher());
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ * Copyright 2010-2012 Luca Garulli (l.garulli--at--orientechnologies.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,17 @@
  */
 package com.orientechnologies.orient.test.database.auto;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import org.testng.Assert;
+import org.testng.annotations.Optional;
+import org.testng.annotations.Parameters;
+import org.testng.annotations.Test;
+
 import com.orientechnologies.common.util.OPair;
 import com.orientechnologies.orient.core.command.OBasicCommandContext;
 import com.orientechnologies.orient.core.db.ODatabase;
@@ -23,16 +34,6 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentComparator;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import org.testng.Assert;
-import org.testng.annotations.Optional;
-import org.testng.annotations.Parameters;
-import org.testng.annotations.Test;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 
 @Test(groups = { "crud", "record-document" })
 public class CRUDDocumentValidationTest extends DocumentDBBaseTest {
@@ -68,7 +69,7 @@ public class CRUDDocumentValidationTest extends DocumentDBBaseTest {
     record.save();
   }
 
-  @Test(dependsOnMethods = "validationMinString", expectedExceptions = OValidationException.class, expectedExceptionsMessageRegExp = "(?s).*more.*than.*")
+  @Test(dependsOnMethods = "validationMinString", expectedExceptions = OValidationException.class, expectedExceptionsMessageRegExp = ".*more.*than.*")
   public void validationMaxString() {
     record.clear();
     record.field("account", account);
@@ -80,7 +81,7 @@ public class CRUDDocumentValidationTest extends DocumentDBBaseTest {
     record.save();
   }
 
-  @Test(dependsOnMethods = "validationMaxString", expectedExceptions = OValidationException.class, expectedExceptionsMessageRegExp = "(?s).*precedes.*")
+  @Test(dependsOnMethods = "validationMaxString", expectedExceptions = OValidationException.class, expectedExceptionsMessageRegExp = ".*precedes.*")
   public void validationMinDate() throws ParseException {
     record.clear();
     record.field("account", account);
@@ -129,6 +130,7 @@ public class CRUDDocumentValidationTest extends DocumentDBBaseTest {
     database.command(new OCommandSQL("INSERT INTO MyTestClass (keyField,dateTimeField,stringField) VALUES (\"K1\",null,null)"))
         .execute();
     database.reload();
+    database.getStorage().reload();
     database.getMetadata().reload();
     database.close();
     database.open("admin", "admin");
@@ -197,7 +199,6 @@ public class CRUDDocumentValidationTest extends DocumentDBBaseTest {
     }
 
     database.command(new OCommandSQL("ALTER DATABASE " + ODatabase.ATTRIBUTES.VALIDATION.name() + " FALSE")).execute();
-    database.setValidationEnabled(false);
     try {
 
       ODocument doc = new ODocument("MyTestClass");
@@ -205,7 +206,6 @@ public class CRUDDocumentValidationTest extends DocumentDBBaseTest {
 
       doc.delete();
     } finally {
-      database.setValidationEnabled(true);
       database.command(new OCommandSQL("ALTER DATABASE " + ODatabase.ATTRIBUTES.VALIDATION.name() + " TRUE")).execute();
     }
   }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ * Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * For more information: http://orientdb.com
+ * For more information: http://www.orientechnologies.com
  */
 package com.orientechnologies.orient.jdbc;
 
-import com.orientechnologies.orient.core.id.ORID;
-
 import java.sql.RowId;
+
+import com.orientechnologies.orient.core.id.ORID;
 
 public class OrientRowId implements RowId {
 

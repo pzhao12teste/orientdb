@@ -5,6 +5,7 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -13,10 +14,10 @@ import java.util.Set;
 
 public class TestShardingDocsAndEdges extends AbstractServerClusterTest {
 
-  protected final static int  SERVERS        = 2;
-  private static final String clusterNodeUSA = "client-type_usa";
-  private static final String clusterNodeEUR = "client-type_eur";
-  private static int          testNumber     = 0;
+  protected final static int    SERVERS        = 2;
+  private static final   String clusterNodeUSA = "user_usa";
+  private static final   String clusterNodeEUR = "user_eur";
+  private static         int    testNumber     = 0;
   private ODatabaseDocumentTx USA;
   private ODatabaseDocumentTx EUR;
 
@@ -29,7 +30,7 @@ public class TestShardingDocsAndEdges extends AbstractServerClusterTest {
 
   @Override
   protected String getDatabaseName() {
-    return "TestShardingDocsAndEdges";
+    return "sharding2";
   }
 
   @Override
@@ -38,13 +39,13 @@ public class TestShardingDocsAndEdges extends AbstractServerClusterTest {
   }
 
   @Override
-  protected void onAfterDatabaseCreation(ODatabaseDocument db) {
+  protected void onAfterDatabaseCreation(OrientBaseGraph db) {
     db.command(new OCommandSQL("ALTER DATABASE CUSTOM useLightweightEdges = true")).execute();
     db.command(new OCommandSQL("ALTER DATABASE MINIMUMCLUSTERS 2")).execute();
-    db.command(new OCommandSQL("create class `Client-Type` extends V")).execute();
-    db.command(new OCommandSQL("create property `Client-Type`.name string")).execute();
-    db.command(new OCommandSQL("alter cluster `Client-Type`   name `client-type_usa`")).execute();
-    db.command(new OCommandSQL("alter cluster `client-type_1` name `client-type_eur`")).execute();
+    db.command(new OCommandSQL("create class User extends V")).execute();
+    db.command(new OCommandSQL("create property User.name string")).execute();
+    db.command(new OCommandSQL("alter cluster user_0 name user_usa")).execute();
+    db.command(new OCommandSQL("alter cluster user_1 name user_eur")).execute();
     db.command(new OCommandSQL("create class Follows extends E")).execute();
   }
 
@@ -55,53 +56,53 @@ public class TestShardingDocsAndEdges extends AbstractServerClusterTest {
 
     Set<String> queryResult;
 
-    execute(USA, "insert into `cluster:" + clusterNodeUSA + "` set name = 'mike'");
+    execute(USA, "insert into cluster:" + clusterNodeUSA + " set name = 'mike'");
     Thread.sleep(1000);
 
     // test 0
-    queryResult = execute(USA, "select from `cluster:" + clusterNodeUSA+"`");
+    queryResult = execute(USA, "select from cluster:" + clusterNodeUSA);
     compare(queryResult, new String[] { "mike" });
 
-    queryResult = execute(USA, "select from `cluster:" + clusterNodeEUR+"`");
+    queryResult = execute(USA, "select from cluster:" + clusterNodeEUR);
     compare(queryResult, new String[] {});
 
-    queryResult = execute(USA, "select from `Client-Type`");
+    queryResult = execute(USA, "select from User");
     compare(queryResult, new String[] { "mike" });
 
-    queryResult = execute(EUR, "select from `cluster:" + clusterNodeUSA+"`");
+    queryResult = execute(EUR, "select from cluster:" + clusterNodeUSA);
     compare(queryResult, new String[] { "mike" });
 
-    queryResult = execute(EUR, "select from `cluster:" + clusterNodeEUR+"`");
+    queryResult = execute(EUR, "select from cluster:" + clusterNodeEUR);
     compare(queryResult, new String[] {});
 
-    queryResult = execute(EUR, "select from `Client-Type`");
+    queryResult = execute(EUR, "select from User");
     compare(queryResult, new String[] { "mike" });
 
-    execute(EUR, "insert into `cluster:" + clusterNodeEUR + "` set name = 'phoebe'");
+    execute(EUR, "insert into cluster:" + clusterNodeEUR + " set name = 'phoebe'");
     Thread.sleep(1000);
 
     // test 6
-    queryResult = execute(USA, "select from `cluster:" + clusterNodeUSA+"`");
+    queryResult = execute(USA, "select from cluster:" + clusterNodeUSA);
     compare(queryResult, new String[] { "mike" });
 
-    queryResult = execute(USA, "select from `cluster:" + clusterNodeEUR+"`");
+    queryResult = execute(USA, "select from cluster:" + clusterNodeEUR);
     compare(queryResult, new String[] { "phoebe" });
 
-    queryResult = execute(USA, "select from `Client-Type`");
+    queryResult = execute(USA, "select from User");
     compare(queryResult, new String[] { "mike", "phoebe" });
 
-    queryResult = execute(EUR, "select from `cluster:" + clusterNodeUSA+"`");
+    queryResult = execute(EUR, "select from cluster:" + clusterNodeUSA);
     compare(queryResult, new String[] { "mike" });
 
-    queryResult = execute(EUR, "select from `cluster:" + clusterNodeEUR+"`");
+    queryResult = execute(EUR, "select from cluster:" + clusterNodeEUR);
     compare(queryResult, new String[] { "phoebe" });
 
-    queryResult = execute(EUR, "select from `Client-Type`");
+    queryResult = execute(EUR, "select from User");
     compare(queryResult, new String[] { "mike", "phoebe" });
 
-    /*
-     * verify that 'select from V returns' the same as 'select from Client-Type' on both nodes
-     */
+        /*
+         verify that 'select from V returns' the same as 'select from User' on both nodes
+         */
     // test 12
     queryResult = execute(USA, "select from V");
     compare(queryResult, new String[] { "mike", "phoebe" });
@@ -110,29 +111,25 @@ public class TestShardingDocsAndEdges extends AbstractServerClusterTest {
     compare(queryResult, new String[] { "mike", "phoebe" });
 
     // LINE A
-    execute(USA, "create edge Follows from (select from `Client-Type` where name = 'mike') to (select from `Client-Type` where name = 'phoebe')");
+    execute(USA, "create edge Follows " + "from (select from User where name = 'mike') " + "to (select from User where name = 'phoebe')");
+
+    // ...
   }
 
   static Set<String> execute(ODatabaseDocument db, String command) throws InterruptedException {
     System.out.println(command);
     Set<String> resultSet = new HashSet();
     db.open("admin", "admin");
-
-    // CREATE A GRAPH TO MANIPULATE ELEMENTS
-
-    db.activateOnCurrentThread();
-
     try {
       Object o = db.command(new OCommandSQL(command)).execute();
       if (o instanceof List) {
         List<ODocument> resultList = (List) o;
         for (OIdentifiable d : resultList) {
-          if(d.getRecord() instanceof  ODocument) {
-            resultSet.add((String) ((ODocument) d.getRecord()).field("name"));
-          }
+          resultSet.add((String) ((ODocument) d.getRecord()).field("name"));
         }
       }
     } finally {
+      db.activateOnCurrentThread();
       db.close();
     }
     return resultSet;

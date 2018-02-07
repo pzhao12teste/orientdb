@@ -1,20 +1,17 @@
 package com.orientechnologies.orient.server.distributed.asynch;
 
 import com.orientechnologies.common.concur.ONeedRetryException;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.metadata.schema.OSchema;
-import com.orientechnologies.orient.core.record.OElement;
-import com.orientechnologies.orient.core.record.OVertex;
-import org.junit.Assert;
-import org.junit.Ignore;
+import com.tinkerpop.blueprints.impls.orient.OrientBaseGraph;
+import com.tinkerpop.blueprints.impls.orient.OrientGraph;
+import com.tinkerpop.blueprints.impls.orient.OrientVertex;
+import junit.framework.Assert;
 
 import java.util.concurrent.CountDownLatch;
 
-@Ignore
 public class TestAsyncReplMode2Servers2OpsCommitConcurrent extends BareBoneBase2ServerTest {
 
-  private static final int TOTAL   = 5;
+  private static final int TOTAL   = 100;
   private ORID             vertex1Id;
   CountDownLatch           counter = new CountDownLatch(2);
 
@@ -26,16 +23,10 @@ public class TestAsyncReplMode2Servers2OpsCommitConcurrent extends BareBoneBase2
   protected void dbClient1() {
     // OGlobalConfiguration.LOG_CONSOLE_LEVEL.setValue("FINEST");
 
-    ODatabaseDocumentTx graph = new ODatabaseDocumentTx(getLocalURL());
-    if(graph.exists()){
-      graph.open("admin", "admin");
-    }else{
-      graph.create();
-    }
-    OVertex vertex1 = graph.newVertex("vertextype");
-    vertex1.save();
+    OrientBaseGraph graph = new OrientGraph(getLocalURL());
+    OrientVertex vertex1 = graph.addVertex("vertextype", (String) null);
     graph.commit();
-    graph.close();
+    graph.shutdown();
 
     vertex1Id = vertex1.getIdentity();
 
@@ -55,10 +46,9 @@ public class TestAsyncReplMode2Servers2OpsCommitConcurrent extends BareBoneBase2
       e.printStackTrace();
     }
 
-    ODatabaseDocumentTx graph = new ODatabaseDocumentTx(getLocalURL());
-    graph.open("admin", "admin");
+    OrientBaseGraph graph = new OrientGraph(getLocalURL());
 
-    OVertex vertex1 = ((OElement)graph.getRecord(vertex1Id)).asVertex().get();
+    OrientVertex vertex1 = graph.getVertex(vertex1Id);
 
     try {
       int i = 0;
@@ -66,28 +56,22 @@ public class TestAsyncReplMode2Servers2OpsCommitConcurrent extends BareBoneBase2
 
         for (int retry = 0; retry < 20; ++retry) {
           try {
-            OVertex vertex2 = graph.newVertex("vertextype");
-            vertex1.addEdge( vertex2,"edgetype");
-            vertex1.save();
+            OrientVertex vertex2 = graph.addVertex("vertextype", (String) null);
+            vertex1.addEdge("edgetype", vertex2);
             graph.commit();
 
-            System.out
-                .println(iClient + " - successfully committed version: " + vertex1.getRecord().getVersion() + " retry: " + retry);
-            break;
-
+            System.out.println(iClient + " - successfully committed version: " + vertex1.getRecord().getVersion());
           } catch (ONeedRetryException e) {
-            System.out.println(
-                iClient + " - caught conflict, reloading vertex. v=" + vertex1.getRecord().getVersion() + " retry: " + retry);
-            graph.rollback();
+            System.out.println(iClient + " - caught conflict, reloading vertex. v=" + vertex1.getRecord().getVersion());
             vertex1.reload();
           }
         }
       }
 
-      // STATISTICALLY HERE AT LEAST ONE CONFLICT HAS BEEN RECEIVED
+      // STATISTICALLY HERE AT LEAST ON CONFLICT HAS BEEN RECEIVED
       vertex1.reload();
 
-      Assert.assertTrue(vertex1.getRecord().getVersion() > TOTAL + 1);
+      Assert.assertTrue(vertex1.getRecord().getVersion() > TOTAL * 2 + 1);
       Assert.assertEquals(TOTAL, i);
 
     } catch (Throwable e) {
@@ -96,7 +80,9 @@ public class TestAsyncReplMode2Servers2OpsCommitConcurrent extends BareBoneBase2
 
     } finally {
       System.out.println("Shutting down");
-      graph.close();
+      graph.shutdown();
+
+      sleep(1000);
     }
   }
 }

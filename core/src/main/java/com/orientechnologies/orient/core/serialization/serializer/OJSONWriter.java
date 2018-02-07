@@ -1,6 +1,6 @@
 /*
  *
- *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  *  you may not use this file except in compliance with the License.
@@ -14,26 +14,30 @@
  *  *  See the License for the specific language governing permissions and
  *  *  limitations under the License.
  *  *
- *  * For more information: http://orientdb.com
+ *  * For more information: http://www.orientechnologies.com
  *
  */
 package com.orientechnologies.orient.core.serialization.serializer;
 
 import com.orientechnologies.common.collection.OMultiCollectionIterator;
-import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.io.OIOUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ORecordLazyMultiValue;
 import com.orientechnologies.orient.core.exception.OSerializationException;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.ORecord;
+import com.orientechnologies.orient.core.serialization.OBase64Utils;
 import com.orientechnologies.orient.core.util.ODateHelper;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 @SuppressWarnings("unchecked")
@@ -60,10 +64,10 @@ public class OJSONWriter {
   }
 
   public static String writeValue(Object iValue, final String iFormat) throws IOException {
-    return writeValue(iValue, iFormat, 0, null);
+    return writeValue(iValue, iFormat, 0);
   }
 
-  public static String writeValue(Object iValue, final String iFormat, final int iIndentLevel, OType valueType) throws IOException {
+  public static String writeValue(Object iValue, final String iFormat, final int iIndentLevel) throws IOException {
     if (iValue == null)
       return "null";
 
@@ -108,7 +112,7 @@ public class OJSONWriter {
         if (iFormat != null && iFormat.contains("shallow"))
           buffer.append(source.length);
         else
-          buffer.append(Base64.getEncoder().encodeToString(source));
+          buffer.append(OBase64Utils.encodeBytes(source));
 
         buffer.append('\"');
       } else {
@@ -159,24 +163,11 @@ public class OJSONWriter {
       iteratorToJSON(((Iterable<?>) iValue).iterator(), iFormat, buffer);
 
     else {
-      if(valueType == null)
-        valueType = OType.getTypeByValue(iValue);
-      
-      if(valueType == OType.CUSTOM){
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream object = new ObjectOutputStream(baos);
-        object.writeObject(iValue);
-        object.flush();
-        buffer.append('"');
-        buffer.append(Base64.getEncoder().encodeToString(baos.toByteArray()));
-        buffer.append('"');
-      }else {
-        // TREAT IT AS STRING
-        final String v = iValue.toString();
-        buffer.append('"');
-        buffer.append(encode(v));
-        buffer.append('"');
-      }
+      // TREAT IT AS STRING
+      final String v = iValue.toString();
+      buffer.append('"');
+      buffer.append(encode(v));
+      buffer.append('"');
     }
 
     if (iValue instanceof ORecordLazyMultiValue)
@@ -242,7 +233,7 @@ public class OJSONWriter {
 
       return buffer.toString();
     } catch (IOException e) {
-      throw OException.wrapException(new OSerializationException("Error on serializing collection"), e);
+      throw new OSerializationException("Error on serializing collection", e);
     }
   }
 
@@ -268,7 +259,7 @@ public class OJSONWriter {
       buffer.append('}');
       return buffer.toString();
     } catch (IOException e) {
-      throw OException.wrapException(new OSerializationException("Error on serializing map"), e);
+      throw new OSerializationException("Error on serializing map", e);
     }
   }
 
@@ -388,22 +379,15 @@ public class OJSONWriter {
     return this;
   }
 
+  public OJSONWriter writeAttribute(final int iIdentLevel, final boolean iNewLine, final String iName, final Object iValue) throws IOException {
+    return writeAttribute(iIdentLevel, iNewLine, iName, iValue, format);
+  }
 
   public OJSONWriter writeAttribute(final String iName, final Object iValue) throws IOException {
     return writeAttribute(-1, false, iName, iValue, format);
   }
 
-  public OJSONWriter writeAttribute(final int iIdentLevel, final boolean iNewLine, final String iName, final Object iValue)
-      throws IOException {
-    return writeAttribute(iIdentLevel, iNewLine, iName, iValue, format, null);
-  }
-
-  public OJSONWriter writeAttribute(final int iIdentLevel, final boolean iNewLine, final String iName, final Object iValue,
-      final String iFormat) throws IOException {
-    return writeAttribute(iIdentLevel, iNewLine, iName, iValue, iFormat, null);
-  }
-  public OJSONWriter writeAttribute(final int iIdentLevel, final boolean iNewLine, final String iName, final Object iValue,
-      final String iFormat,OType valueType) throws IOException {
+  public OJSONWriter writeAttribute(final int iIdentLevel, final boolean iNewLine, final String iName, final Object iValue, final String iFormat) throws IOException {
     if (!firstAttribute)
       out.append(",");
 
@@ -428,7 +412,7 @@ public class OJSONWriter {
       }
       out.append(']');
     } else
-      out.append(writeValue(iValue, iFormat, iIdentLevel, valueType));
+      out.append(writeValue(iValue, iFormat, iIdentLevel));
 
     firstAttribute = false;
     return this;

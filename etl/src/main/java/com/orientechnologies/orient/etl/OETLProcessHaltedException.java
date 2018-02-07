@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (info(-at-)orientdb.com)
+ *  * Copyright 2010-2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -24,5 +24,9 @@ public class OETLProcessHaltedException extends OException {
 
   public OETLProcessHaltedException(final String s) {
     super(s);
+  }
+
+  public OETLProcessHaltedException(String message, Throwable cause) {
+    super(message, cause);
   }
 }

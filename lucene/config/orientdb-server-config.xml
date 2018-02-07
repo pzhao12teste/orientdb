@@ -26,7 +26,7 @@
                 <parameter value="yyyy-MM-dd HH:mm:ss" name="profile.default.mail.date.format"/>
             </parameters>
         </handler>
-        <!--<handler class="com.orientechnologies.lucene.OLuceneSpatialIndexPlugin">-->
+        <!--<handler class="com.orientechnologies.lucene.OLuceneIndexPlugin">-->
 
         <!--</handler>-->
 
@@ -55,8 +55,8 @@
                       name="http"/>
         </protocols>
         <listeners>
-            <listener protocol="binary" port-range="2426-2430" ip-address="0.0.0.0"/>
-            <listener protocol="http" port-range="2482-2490" ip-address="0.0.0.0">
+            <listener protocol="binary" port-range="2424-2430" ip-address="0.0.0.0"/>
+            <listener protocol="http" port-range="2480-2490" ip-address="0.0.0.0">
                 <commands>
                     <command
                             implementation="com.orientechnologies.orient.server.network.protocol.http.command.get.OServerCommandGetStaticContent"
@@ -76,6 +76,7 @@
             </listener>
         </listeners>
     </network>
+    <storages/>
     <users>
         <user resources="*" password="root" name="root"/>
         <user resources="connect,server.listDatabases,server.dblist" password="guest" name="guest"/>
@@ -83,6 +84,10 @@
     <properties>
         <entry value="1" name="db.pool.min"/>
         <entry value="20" name="db.pool.max"/>
+        <entry value="false" name="cache.level1.enabled"/>
+        <entry value="1000" name="cache.level1.size"/>
+        <entry value="true" name="cache.level2.enabled"/>
+        <entry value="1000" name="cache.level2.size"/>
         <entry value="true" name="profiler.enabled"/>
         <entry value="info" name="log.console.level"/>
         <entry value="fine" name="log.file.level"/>

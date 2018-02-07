@@ -1,6 +1,6 @@
 /*
  *
- *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  *  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  *  *  See the License for the specific language governing permissions and
  *  *  limitations under the License.
  *  *
- *  * For more information: http://orientdb.com
+ *  * For more information: http://www.orientechnologies.com
  *
  */
 package com.orientechnologies.orient.core.command;
@@ -35,7 +35,7 @@ import java.util.Set;
 /**
  * Text based Command Request abstract class.
  *
- * @author Luca Garulli (l.garulli--(at)--orientdb.com)
+ * @author Luca Garulli
  */
 @SuppressWarnings("serial")
 public abstract class OCommandRequestAbstract implements OCommandRequestInternal, ODistributedCommand {
@@ -45,16 +45,14 @@ public abstract class OCommandRequestAbstract implements OCommandRequestInternal
   protected long             timeoutMs       = OGlobalConfiguration.COMMAND_TIMEOUT.getValueAsLong();
   protected TIMEOUT_STRATEGY timeoutStrategy = TIMEOUT_STRATEGY.EXCEPTION;
   protected Map<Object, Object> parameters;
-  protected String  fetchPlan       = null;
-  protected boolean useCache        = false;
-  protected boolean cacheableResult = false;
+  protected String  fetchPlan = null;
+  protected boolean useCache  = true;
   protected OCommandContext        context;
   protected OAsyncReplicationOk    onAsyncReplicationOk;
   protected OAsyncReplicationError onAsyncReplicationError;
 
-  private final Set<String> nodesToExclude = new HashSet<String>();
-  private boolean recordResultSet = true;
 
+  private final Set<String> nodesToExclude = new HashSet<String>();
 
   protected OCommandRequestAbstract() {
   }
@@ -77,15 +75,12 @@ public abstract class OCommandRequestAbstract implements OCommandRequestInternal
   }
 
   @SuppressWarnings("unchecked")
-  protected Map<Object, Object> convertToParameters(Object... iArgs) {
+  protected Map<Object, Object> convertToParameters(final Object... iArgs) {
     final Map<Object, Object> params;
 
     if (iArgs.length == 1 && iArgs[0] instanceof Map) {
       params = (Map<Object, Object>) iArgs[0];
     } else {
-      if (iArgs.length == 1 && iArgs[0] != null && iArgs[0].getClass().isArray() && iArgs[0] instanceof Object[])
-        iArgs = (Object[]) iArgs[0];
-
       params = new HashMap<Object, Object>(iArgs.length);
       for (int i = 0; i<iArgs.length; ++i) {
         Object par = iArgs[i];
@@ -178,16 +173,6 @@ public abstract class OCommandRequestAbstract implements OCommandRequestInternal
   }
 
   @Override
-  public boolean isCacheableResult() {
-    return cacheableResult;
-  }
-
-  @Override
-  public void setCacheableResult(final boolean iValue) {
-    cacheableResult = iValue;
-  }
-
-  @Override
   public OCommandContext getContext() {
     if (context == null)
       context = new OBasicCommandContext();
@@ -232,15 +217,5 @@ public abstract class OCommandRequestAbstract implements OCommandRequestInternal
 
   public OAsyncReplicationError getOnAsyncReplicationError() {
     return onAsyncReplicationError;
-  }
-
-
-  @Override
-  public void setRecordResultSet(boolean recordResultSet) {
-    this.recordResultSet = recordResultSet;
-  }
-
-  public boolean isRecordResultSet() {
-    return recordResultSet;
   }
 }

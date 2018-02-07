@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+ *  * Copyright 2014 Orient Technologies.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.util.Collection;
 
@@ -36,58 +36,73 @@ import java.util.Collection;
  * Created by enricorisa on 28/06/14.
  */
 // Renable when solved killing issue
+@Test(groups = "remote", enabled = false)
 public class LuceneInsertIntegrityRemoteTest extends BaseLuceneTest {
 
-  @Before
-  public void init() {
+  public LuceneInsertIntegrityRemoteTest() {
+    super();
+  }
 
-    OSchema schema = db.getMetadata().getSchema();
+  @Override
+  protected String getDatabaseName() {
+    return "insertIntegrity";
+  }
+
+  @BeforeClass
+  public void init() {
+    initDB();
+
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
     OClass oClass = schema.createClass("City");
 
     oClass.createProperty("name", OType.STRING);
-    db.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+    databaseDocumentTx.command(new OCommandSQL("create index City.name on City (name) FULLTEXT ENGINE LUCENE")).execute();
+  }
+
+  @AfterClass
+  public void deInit() {
+    deInitDB();
   }
 
   @Test
-  @Ignore
   public void testInsertUpdateWithIndex() throws Exception {
 
-    db.getMetadata().reload();
-    OSchema schema = db.getMetadata().getSchema();
+    databaseDocumentTx.getMetadata().reload();
+    OSchema schema = databaseDocumentTx.getMetadata().getSchema();
 
     ODocument doc = new ODocument("City");
     doc.field("name", "Rome");
 
-    db.begin();
-    db.save(doc);
-    db.commit();
+    databaseDocumentTx.begin();
+    databaseDocumentTx.save(doc);
+    databaseDocumentTx.commit();
     OIndex idx = schema.getClass("City").getClassIndex("City.name");
 
     Collection<?> coll = (Collection<?>) idx.get("Rome");
     Assert.assertEquals(coll.size(), 1);
 
-    doc = db.load((ORID) coll.iterator().next());
+    doc = databaseDocumentTx.load((ORID) coll.iterator().next());
     Assert.assertEquals(doc.field("name"), "Rome");
 
-    db.begin();
+    databaseDocumentTx.begin();
     doc.field("name", "London");
-    db.save(doc);
-    db.commit();
+    databaseDocumentTx.save(doc);
+    databaseDocumentTx.commit();
 
     coll = (Collection<?>) idx.get("Rome");
     Assert.assertEquals(coll.size(), 0);
     coll = (Collection<?>) idx.get("London");
     Assert.assertEquals(coll.size(), 1);
 
-    doc = db.load((ORID) coll.iterator().next());
+    doc = databaseDocumentTx.load((ORID) coll.iterator().next());
     Assert.assertEquals(doc.field("name"), "London");
 
-    db.begin();
+    databaseDocumentTx.begin();
     doc.field("name", "Berlin");
-    db.save(doc);
-    db.commit();
+    databaseDocumentTx.save(doc);
+    databaseDocumentTx.commit();
 
-    doc = db.load(doc.getIdentity(), null, true);
+    doc = databaseDocumentTx.load(doc.getIdentity(), null, true);
     Assert.assertEquals(doc.field("name"), "Berlin");
 
     coll = (Collection<?>) idx.get("Rome");
@@ -99,15 +114,15 @@ public class LuceneInsertIntegrityRemoteTest extends BaseLuceneTest {
     Assert.assertEquals(coll.size(), 1);
 
     Thread.sleep(1000);
+    kill(false);
 
-    //FIXME
-//    initDB();
-//
-    doc = db.load(doc.getIdentity(), null, true);
+    initDB(false);
+
+    doc = databaseDocumentTx.load(doc.getIdentity(), null, true);
 
     Assert.assertEquals(doc.field("name"), "Berlin");
 
-    schema = db.getMetadata().getSchema();
+    schema = databaseDocumentTx.getMetadata().getSchema();
     idx = schema.getClass("City").getClassIndex("City.name");
 
     Assert.assertEquals(idx.getSize(), 1);

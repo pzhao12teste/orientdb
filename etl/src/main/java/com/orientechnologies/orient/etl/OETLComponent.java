@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2010-2016 OrientDB LTD (info(-at-)orientdb.com)
+ *  * Copyright 2010-2014 Orient Technologies LTD (info(at)orientechnologies.com)
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -19,37 +19,19 @@
 package com.orientechnologies.orient.etl;
 
 import com.orientechnologies.orient.core.command.OCommandContext;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 
 /**
- * ETL basic component. Each ETL component must implement this interface.
+ * ETL basic component.
  */
 public interface OETLComponent {
-
-  /**
-   * @return
-   */
   ODocument getConfiguration();
 
-  /**
-   * Called by the @OETLProcessor
-   *
-   * @param configuration
-   * @param context
-   */
-  void configure(ODocument configuration, OCommandContext context);
+  void configure(OETLProcessor iProcessor, ODocument iConfiguration, OCommandContext iSettings);
 
-  void begin(ODatabaseDocument db);
+  void begin();
 
   void end();
 
-  /**
-   * Return the symbolic name of the component
-   *
-   * @return the name of the component
-   */
   String getName();
-
-  void setProcessor(OETLProcessor processor);
 }

@@ -1,6 +1,6 @@
 /*
   *
-  *  *  Copyright 2010-2016 OrientDB LTD (http://orientdb.com)
+  *  *  Copyright 2014 Orient Technologies LTD (info(at)orientechnologies.com)
   *  *
   *  *  Licensed under the Apache License, Version 2.0 (the "License");
   *  *  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
   *  *  See the License for the specific language governing permissions and
   *  *  limitations under the License.
   *  *
-  *  * For more information: http://orientdb.com
+  *  * For more information: http://www.orientechnologies.com
   *
   */
 package com.orientechnologies.orient.core.command;
@@ -28,7 +28,6 @@ import com.orientechnologies.orient.core.serialization.OMemoryStream;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.serialization.serializer.binary.impl.index.OCompositeKeySerializer;
-import com.orientechnologies.orient.core.serialization.serializer.record.ORecordSerializer;
 import com.orientechnologies.orient.core.serialization.serializer.record.string.ORecordSerializerStringAbstract;
 
 import java.util.HashMap;
@@ -39,7 +38,7 @@ import java.util.Map.Entry;
 /**
  * Text based Command Request abstract class.
  *
- * @author Luca Garulli (l.garulli--(at)--orientdb.com)
+ * @author Luca Garulli
  */
 @SuppressWarnings("serial")
 public abstract class OCommandRequestTextAbstract extends OCommandRequestAbstract implements OCommandRequestText {
@@ -65,7 +64,7 @@ public abstract class OCommandRequestTextAbstract extends OCommandRequestAbstrac
     OExecutionThreadLocal.INSTANCE.get().onAsyncReplicationOk = onAsyncReplicationOk;
     OExecutionThreadLocal.INSTANCE.get().onAsyncReplicationError = onAsyncReplicationError;
 
-    return (RET) ODatabaseRecordThreadLocal.instance().get().getStorage().command(this);
+    return (RET) ODatabaseRecordThreadLocal.INSTANCE.get().getStorage().command(this);
   }
 
   public String getText() {
@@ -77,9 +76,9 @@ public abstract class OCommandRequestTextAbstract extends OCommandRequestAbstrac
     return this;
   }
 
-  public OCommandRequestText fromStream(final byte[] iStream, ORecordSerializer serializer) throws OSerializationException {
+  public OSerializableStream fromStream(final byte[] iStream) throws OSerializationException {
     final OMemoryStream buffer = new OMemoryStream(iStream);
-    fromStream(buffer, serializer);
+    fromStream(buffer);
     return this;
   }
 
@@ -130,20 +129,16 @@ public abstract class OCommandRequestTextAbstract extends OCommandRequestAbstrac
     return buffer.toByteArray();
   }
 
-  protected void fromStream(final OMemoryStream buffer, ORecordSerializer serializer) {
+  protected void fromStream(final OMemoryStream buffer) {
     text = buffer.getAsString();
 
     parameters = null;
-
 
     final boolean simpleParams = buffer.getAsBoolean();
     if (simpleParams) {
       final byte[] paramBuffer = buffer.getAsByteArray();
       final ODocument param = new ODocument();
-      if (serializer != null)
-        serializer.fromStream(paramBuffer, param, null);
-      else
-        param.fromStream(paramBuffer);
+      param.fromStream(paramBuffer);
 
       Map<Object, Object> params = param.field("params");
       parameters = new HashMap<Object, Object>();
@@ -175,10 +170,7 @@ public abstract class OCommandRequestTextAbstract extends OCommandRequestAbstrac
     if (compositeKeyParamsPresent) {
       final byte[] paramBuffer = buffer.getAsByteArray();
       final ODocument param = new ODocument();
-      if (serializer != null)
-        serializer.fromStream(paramBuffer, param, null);
-      else
-        param.fromStream(paramBuffer);
+      param.fromStream(paramBuffer);
 
       final Map<Object, Object> compositeKeyParams = param.field("compositeKeyParams");
 
