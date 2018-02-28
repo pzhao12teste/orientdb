@@ -30,31 +30,29 @@ import com.orientechnologies.orient.core.intent.OIntent;
  * @author Luca Garulli (http://www.orientechnologies.com)
  */
 public abstract class OrientConfigurableGraph {
-  protected Settings settings = new Settings();
+  protected Settings             settings                                         = new Settings();
 
-  protected static final boolean     USE_LIGHTWEIGHT_EDGES_DEFAULT                    = false;
-  protected static final boolean     USE_CLASS_FOR_EDGE_LABEL_DEFAULT                 = true;
-  protected static final boolean     USE_CLASS_FOR_VERTEX_LABEL_DEFAULT               = true;
-  protected static final boolean     KEEP_IN_MEMORY_REFERENCES_DEFAULT                = false;
-  protected static final boolean     USE_VERTEX_FIELDS_FOR_EDGE_LABELS                = true;
-  protected static final boolean     SAVE_ORIGINAL_IDS_DEFAULT                        = false;
-  protected static final boolean     STANDARD_ELEMENT_CONSTRAINTS_DEFAULT             = true;
-  protected static final boolean     STANDARD_EXCEPTIONS                              = false;
-  protected static final boolean     WARN_ON_FORCE_CLOSING_TX_DEFAULT                 = true;
-  protected static final boolean     AUTO_SCALE_EDGE_TYPE_DEFAULT                     = false;
-  protected static final boolean     USE_LOG_DEFAULT                                  = true;
-  protected static final int         EDGE_CONTAINER_EMBEDDED_2_TREE_THRESHOLD_DEFAULT = -1;
-  protected static final int         EDGE_CONTAINER_TREE_2_EMBEDDED_THRESHOLD_DEFAULT = -1;
-  protected static final THREAD_MODE THREAD_MODE_DEFAULT                              = THREAD_MODE.AUTOSET_IFNULL;
-  protected static final boolean     AUTO_START_TX_DEFAULT                            = true;
-  protected static final boolean     REQUIRE_TRANSACTION_DEFAULT                      = false;
-  protected static final int         STANDARD_MAX_RETRIES                             = 50;
+  protected static final boolean USE_LIGHTWEIGHT_EDGES_DEFAULT                    = false;
+  protected final boolean        USE_CLASS_FOR_EDGE_LABEL_DEFAULT                 = true;
+  protected final boolean        USE_CLASS_FOR_VERTEX_LABEL_DEFAULT               = true;
+  protected final boolean        KEEP_IN_MEMORY_REFERENCES_DEFAULT                = false;
+  protected final boolean        USE_VERTEX_FIELDS_FOR_EDGE_LABELS                = true;
+  protected final boolean        SAVE_ORIGINAL_IDS_DEFAULT                        = false;
+  protected final boolean        STANDARD_ELEMENT_CONSTRAINTS_DEFAULT             = true;
+  protected final boolean        WARN_ON_FORCE_CLOSING_TX_DEFAULT                 = true;
+  protected final boolean        AUTO_SCALE_EDGE_TYPE_DEFAULT                     = false;
+  protected final boolean        USE_LOG_DEFAULT                                  = true;
+  protected final int            EDGE_CONTAINER_EMBEDDED_2_TREE_THRESHOLD_DEFAULT = -1;
+  protected final int            EDGE_CONTAINER_TREE_2_EMBEDDED_THRESHOLD_DEFAULT = -1;
+  protected final THREAD_MODE    THREAD_MODE_DEFAULT                              = THREAD_MODE.AUTOSET_IFNULL;
+  protected final boolean        AUTO_START_TX_DEFAULT                            = true;
+  protected final boolean        REQUIRE_TRANSACTION_DEFAULT                      = false;
 
   public enum THREAD_MODE {
     MANUAL, AUTOSET_IFNULL, ALWAYS_AUTOSET
   }
 
-  public static class Settings {
+  public class Settings {
 
     private Boolean     useLightweightEdges                 = null;
     private Boolean     useClassForEdgeLabel                = null;
@@ -63,7 +61,6 @@ public abstract class OrientConfigurableGraph {
     private Boolean     useVertexFieldsForEdgeLabels        = null;
     private Boolean     saveOriginalIds                     = null;
     private Boolean     standardElementConstraints          = null;
-    private Boolean     standardExceptions                  = null;
     private Boolean     warnOnForceClosingTx                = null;
     private Boolean     autoScaleEdgeType                   = null;
     private Integer     edgeContainerEmbedded2TreeThreshold = null;
@@ -72,7 +69,6 @@ public abstract class OrientConfigurableGraph {
     private Boolean     autoStartTx                         = null;
     private Boolean     requireTransaction                  = null;
     private Boolean     useLog                              = null;
-    private Integer     maxRetries                          = null;
 
     public Settings copy() {
       final Settings copy = new Settings();
@@ -83,7 +79,6 @@ public abstract class OrientConfigurableGraph {
       copy.useVertexFieldsForEdgeLabels = useVertexFieldsForEdgeLabels;
       copy.saveOriginalIds = saveOriginalIds;
       copy.standardElementConstraints = standardElementConstraints;
-      copy.standardExceptions = standardExceptions;
       copy.warnOnForceClosingTx = warnOnForceClosingTx;
       copy.autoScaleEdgeType = autoScaleEdgeType;
       copy.edgeContainerEmbedded2TreeThreshold = edgeContainerEmbedded2TreeThreshold;
@@ -92,7 +87,6 @@ public abstract class OrientConfigurableGraph {
       copy.autoStartTx = autoStartTx;
       copy.requireTransaction = requireTransaction;
       copy.useLog = useLog;
-      copy.maxRetries = maxRetries;
       return copy;
     }
 
@@ -122,9 +116,6 @@ public abstract class OrientConfigurableGraph {
       }
       if (settings.standardElementConstraints != null) {
         standardElementConstraints = settings.standardElementConstraints;
-      }
-      if (settings.standardExceptions != null) {
-        standardExceptions = settings.standardExceptions;
       }
       if (settings.warnOnForceClosingTx != null) {
         warnOnForceClosingTx = settings.warnOnForceClosingTx;
@@ -205,23 +196,6 @@ public abstract class OrientConfigurableGraph {
     public void setUseLog(final boolean useLog) {
       this.useLog = useLog;
 
-    }
-
-    /**
-     * Returns the maximum number of retry in case of auto managed OConcurrentModificationException (like addEdge).
-     */
-    public int getMaxRetries() {
-      if (maxRetries == null) {
-        return STANDARD_MAX_RETRIES;
-      }
-      return maxRetries;
-    }
-
-    /**
-     * Changes the maximum number of retry in case of auto managed OConcurrentModificationException (like addEdge).
-     */
-    public void setMaxRetries(final int maxRetries) {
-      this.maxRetries = maxRetries;
     }
 
     /**
@@ -382,12 +356,7 @@ public abstract class OrientConfigurableGraph {
     }
 
     /**
-     * Returns true if Blueprints standard exceptions are used:
-     * <li>
-     * <ul>
-     * IllegalStateException instead of ORecordNotFoundException when the record was not found
-     * </ul>
-     * </li>
+     * Returns true if Blueprints standard constraints are applied to elements.
      */
     public boolean isStandardElementConstraints() {
       if (standardElementConstraints == null) {
@@ -401,28 +370,6 @@ public abstract class OrientConfigurableGraph {
      */
     public void setStandardElementConstraints(final boolean allowsPropertyValueNull) {
       this.standardElementConstraints = allowsPropertyValueNull;
-    }
-
-    /**
-     * Returns true if the warning is generated on force the graph closing.
-     */
-    public boolean isStandardExceptions() {
-      if (standardExceptions == null) {
-        return STANDARD_EXCEPTIONS;
-      }
-      return standardExceptions;
-    }
-
-    /**
-     * Changes the setting to throw Blueprints standard exceptions:
-     * <li>
-     * <ul>
-     * IllegalStateException instead of ORecordNotFoundException when the record was not found
-     * </ul>
-     * </li>
-     */
-    public void setStandardExceptions(final boolean stdExceptions) {
-      this.standardExceptions = stdExceptions;
     }
 
     /**
@@ -671,31 +618,6 @@ public abstract class OrientConfigurableGraph {
   }
 
   /**
-   * Returns true if Blueprints standard exceptions are used:
-   * <li>
-   * <ul>
-   * IllegalStateException instead of ORecordNotFoundException when the record was not found
-   * </ul>
-   * </li>
-   */
-  public boolean isStandardExceptions() {
-    return settings.isStandardExceptions();
-  }
-
-  /**
-   * Changes the setting to throw Blueprints standard exceptions:
-   * <li>
-   * <ul>
-   * IllegalStateException instead of ORecordNotFoundException when the record was not found
-   * </ul>
-   * </li>
-   */
-  public OrientConfigurableGraph setStandardExceptions(final boolean stdExceptions) {
-    this.settings.setStandardExceptions(stdExceptions);
-    return this;
-  }
-
-  /**
    * Returns true if the warning is generated on force the graph closing.
    */
   public boolean isWarnOnForceClosingTx() {
@@ -751,20 +673,6 @@ public abstract class OrientConfigurableGraph {
   public OrientConfigurableGraph setUseLog(final boolean useLog) {
     this.settings.useLog = useLog;
     return this;
-  }
-
-  /**
-   * Returns the maximum number of retries in case of auto managed OConcurrentModificationException (like addEdge).
-   */
-  public int getMaxRetries() {
-    return this.settings.getMaxRetries();
-  }
-
-  /**
-   * Changes the maximum number of retries in case of auto managed OConcurrentModificationException (like addEdge).
-   */
-  public void setMaxRetries(final int maxRetries) {
-    this.settings.setMaxRetries(maxRetries);
   }
 
   /**

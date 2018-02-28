@@ -516,6 +516,9 @@ public class OChainedIndexProxy<T> implements OIndex<T> {
     throw new UnsupportedOperationException("Not allowed operation");
   }
 
+  public ORID getIdentity() {
+    throw new UnsupportedOperationException("Not allowed operation");
+  }
 
   public Set<String> getClusters() {
     throw new UnsupportedOperationException("Not allowed operation");

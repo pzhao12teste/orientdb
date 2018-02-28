@@ -6,11 +6,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeSet;
 
-import com.orientechnologies.common.directmemory.ODirectMemoryPointer;
-import com.orientechnologies.common.directmemory.ODirectMemoryPointerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.orientechnologies.common.directmemory.ODirectMemoryPointer;
 import com.orientechnologies.common.serialization.types.OLongSerializer;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORecordId;
@@ -27,7 +26,7 @@ import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSe
 @Test
 public class OSBTreeBonsaiLeafBucketTest {
   public void testInitialization() throws Exception {
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     cachePointer.incrementReferrer();
 
@@ -59,7 +58,7 @@ public class OSBTreeBonsaiLeafBucketTest {
       keys.add(random.nextLong());
     }
 
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     cachePointer.incrementReferrer();
 
@@ -99,7 +98,7 @@ public class OSBTreeBonsaiLeafBucketTest {
       keys.add(random.nextLong());
     }
 
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     cachePointer.incrementReferrer();
 
@@ -147,7 +146,7 @@ public class OSBTreeBonsaiLeafBucketTest {
       keys.add(random.nextLong());
     }
 
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     OCacheEntry cacheEntry = new OCacheEntry(0, 0, cachePointer, false);
 
@@ -223,7 +222,7 @@ public class OSBTreeBonsaiLeafBucketTest {
       keys.add(random.nextLong());
     }
 
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     cachePointer.incrementReferrer();
 
@@ -293,7 +292,7 @@ public class OSBTreeBonsaiLeafBucketTest {
   }
 
   public void testSetLeftSibling() throws Exception {
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     cachePointer.incrementReferrer();
 
@@ -309,7 +308,7 @@ public class OSBTreeBonsaiLeafBucketTest {
   }
 
   public void testSetRightSibling() throws Exception {
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(ODurablePage.MAX_PAGE_SIZE_BYTES);
     OCachePointer cachePointer = new OCachePointer(pointer, new OLogSequenceNumber(0, 0), 0, 0);
     cachePointer.incrementReferrer();
 

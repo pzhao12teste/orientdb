@@ -26,7 +26,6 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.record.impl.ODocumentInternal;
-import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItem;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemFieldAll;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemFieldAny;
@@ -57,7 +56,7 @@ public class OTraverseRecordProcess extends OTraverseAbstractProcess<OIdentifiab
     if (command.getPredicate() != null) {
       final Object conditionResult = command.getPredicate().evaluate(target, null, command.getContext());
       if (conditionResult != Boolean.TRUE)
-        return drop();
+        return pop();
     }
 
     // UPDATE ALL TRAVERSED RECORD TO AVOID RECURSION
@@ -91,8 +90,7 @@ public class OTraverseRecordProcess extends OTraverseAbstractProcess<OIdentifiab
 
         } else {
           // SINGLE FIELD
-          final int pos = OStringSerializerHelper
-              .parse(cfgField, new StringBuilder(), 0, -1, new char[] { '.' }, true, true, true, 0, true) - 1;
+          final int pos = cfgField.indexOf('.');
           if (pos > -1) {
             // FOUND <CLASS>.<FIELD>
             final OClass cls = ODocumentInternal.getImmutableSchemaClass(targetDoc);

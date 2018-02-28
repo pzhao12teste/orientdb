@@ -22,6 +22,7 @@ package com.orientechnologies.orient.core.db;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+import com.orientechnologies.orient.core.exception.OSchemaException;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.security.OToken;
@@ -133,7 +134,7 @@ public class ODatabaseFactory {
 
   public void checkSchema(final ODatabase<?> iDatabase) {
     // FORCE NON DISTRIBUTION ON CREATION
-    OScenarioThreadLocal.INSTANCE.setRunMode(OScenarioThreadLocal.RUN_MODE.RUNNING_DISTRIBUTED);
+    OScenarioThreadLocal.INSTANCE.set(OScenarioThreadLocal.RUN_MODE.RUNNING_DISTRIBUTED);
     try {
 
       final OSchema schema = iDatabase.getMetadata().getSchema();
@@ -163,7 +164,7 @@ public class ODatabaseFactory {
       if (vertexBaseClass.getOverSize() < 2)
         vertexBaseClass.setOverSize(2);
     } finally {
-      OScenarioThreadLocal.INSTANCE.setRunMode(OScenarioThreadLocal.RUN_MODE.DEFAULT);
+      OScenarioThreadLocal.INSTANCE.set(OScenarioThreadLocal.RUN_MODE.DEFAULT);
     }
   }
 }

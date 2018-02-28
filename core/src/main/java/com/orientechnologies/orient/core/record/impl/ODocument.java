@@ -2084,42 +2084,34 @@ public class ODocument extends ORecordAbstract implements Iterable<Entry<String,
       if (!docEntry.exist()) {
         continue;
       }
+      final Object value = field(f);
       final Object otherValue = docEntry.value;
 
-      ODocumentEntry curValue = _fields.get(f);
+      if (containsField(f) && iMergeSingleItemsOfMultiValueFields) {
+        if (value instanceof Map<?, ?>) {
+          final Map<String, Object> map = (Map<String, Object>) value;
+          final Map<String, Object> otherMap = (Map<String, Object>) otherValue;
 
-      if(curValue != null && curValue.exist()) {
-        final Object value = curValue.value;
-        if (iMergeSingleItemsOfMultiValueFields) {
-          if (value instanceof Map<?, ?>) {
-            final Map<String, Object> map = (Map<String, Object>) value;
-            final Map<String, Object> otherMap = (Map<String, Object>) otherValue;
-
-            for (Entry<String, Object> entry : otherMap.entrySet()) {
-              map.put(entry.getKey(), entry.getValue());
-            }
-            continue;
-          } else if (OMultiValue.isMultiValue(value) && !(value instanceof ORidBag)) {
-            for (Object item : OMultiValue.getMultiValueIterable(otherValue)) {
-              if (!OMultiValue.contains(value, item))
-                OMultiValue.add(value, item);
-            }
-
-            // JUMP RAW REPLACE
-            continue;
+          for (Entry<String, Object> entry : otherMap.entrySet()) {
+            map.put(entry.getKey(), entry.getValue());
           }
-        }
-        boolean bagsMerged = false;
-        if (value instanceof ORidBag && otherValue instanceof ORidBag)
-          bagsMerged = ((ORidBag) value).tryMerge((ORidBag) otherValue, iMergeSingleItemsOfMultiValueFields);
+          continue;
+        } else if (OMultiValue.isMultiValue(value) && !(value instanceof ORidBag)) {
+          for (Object item : OMultiValue.getMultiValueIterable(otherValue)) {
+            if (!OMultiValue.contains(value, item))
+              OMultiValue.add(value, item);
+          }
 
-        if (!bagsMerged && (value != null && !value.equals(otherValue)) || (value== null && otherValue != null)) {
-          if (otherValue instanceof ORidBag)
-            // DESERIALIZE IT TO ASSURE TEMPORARY RIDS ARE TREATED CORRECTLY
-            ((ORidBag) otherValue).convertLinks2Records();
-          field(f, otherValue);
+          // JUMP RAW REPLACE
+          continue;
         }
-      } else {
+      }
+
+      boolean bagsMerged = false;
+      if (value instanceof ORidBag && otherValue instanceof ORidBag)
+        bagsMerged = ((ORidBag) value).tryMerge((ORidBag) otherValue, iMergeSingleItemsOfMultiValueFields);
+
+      if (!bagsMerged && (value != null && !value.equals(otherValue)) || (value == null && otherValue != null)) {
         if (otherValue instanceof ORidBag)
           // DESERIALIZE IT TO ASSURE TEMPORARY RIDS ARE TREATED CORRECTLY
           ((ORidBag) otherValue).convertLinks2Records();

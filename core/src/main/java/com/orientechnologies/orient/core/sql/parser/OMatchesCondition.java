@@ -9,10 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 public class OMatchesCondition extends OBooleanExpression {
-  protected OExpression     expression;
-  protected String          right;
-  protected OInputParameter rightParam;
-  protected Object          paramValue;
+  protected OExpression expression;
+  protected String      right;
 
   public OMatchesCondition(int id) {
     super(id);
@@ -35,13 +33,6 @@ public class OMatchesCondition extends OBooleanExpression {
   @Override
   public void replaceParameters(Map<Object, Object> params) {
     expression.replaceParameters(params);
-    if (rightParam != null) {
-      Object paramResult = rightParam.bindFromInputParams(params);
-      if (rightParam != paramResult) {
-        paramValue = paramResult;
-      }
-
-    }
   }
 
   @Override
@@ -49,18 +40,7 @@ public class OMatchesCondition extends OBooleanExpression {
     StringBuilder result = new StringBuilder();
     result.append(expression.toString());
     result.append(" MATCHES ");
-    if(rightParam!=null){
-      if (paramValue != null) {
-        if (paramValue instanceof String) {
-          paramValue = OExpression.encode((String) paramValue);
-          result.append("\"" + paramValue + "\"");
-        }
-      }else {
-        result.append(rightParam);
-      }
-    } else if (right != null) {
-      result.append(right);
-    }
+    result.append(right);
     return result.toString();
   }
 

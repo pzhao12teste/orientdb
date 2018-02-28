@@ -7,13 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 public class OUpdateStatement extends OStatement {
-  protected OFromClause             target;
-//  protected ORid                    targetRid;
-//  protected List<ORid>              targetRids;
-//  protected OIdentifier             targetClass;
-//  protected OCluster                targetCluster;
-//  protected OIndexIdentifier        targetIndex;
-//  protected OStatement              targetQuery;
+  protected ORid                    targetRid;
+  protected OIdentifier             targetClass;
+  protected OCluster                targetCluster;
+  protected OIndexIdentifier        targetIndex;
+  protected OStatement              targetQuery;
 
   protected List<OUpdateOperations> operations   = new ArrayList<OUpdateOperations>();
 
@@ -42,29 +40,19 @@ public class OUpdateStatement extends OStatement {
   public String toString() {
     StringBuilder result = new StringBuilder();
     result.append("UPDATE ");
-    result.append(target.toString());
-//    if (targetRid != null) {
-//      result.append(targetRid.toString());
-//    }else if (targetRids != null) {
-//      result.append("[");
-//      for(int i=0;i< targetRids.size();i++){
-//        if(i>0){
-//          result.append(", ");
-//        }
-//        result.append(targetRids.get(i));
-//      }
-//      result.append("]");
-//    } else if (targetClass != null) {
-//      result.append(targetClass.toString());
-//    } else if (targetCluster != null) {
-//      result.append(targetCluster.toString());
-//    } else if (targetIndex != null) {
-//      result.append(targetIndex.toString());
-//    } else if (targetQuery != null) {
-//      result.append("(");
-//      result.append(targetQuery.toString());
-//      result.append(")");
-//    }
+    if (targetRid != null) {
+      result.append(targetRid.toString());
+    } else if (targetClass != null) {
+      result.append(targetClass.toString());
+    } else if (targetCluster != null) {
+      result.append(targetCluster.toString());
+    } else if (targetIndex != null) {
+      result.append(targetIndex.toString());
+    } else if (targetQuery != null) {
+      result.append("(");
+      result.append(targetQuery.toString());
+      result.append(")");
+    }
 
     for (OUpdateOperations ops : this.operations) {
       result.append(" ");
@@ -106,11 +94,8 @@ public class OUpdateStatement extends OStatement {
   }
 
   public void replaceParameters(Map<Object, Object> params) {
-//    if (this.targetQuery != null) {
-//      targetQuery.replaceParameters(params);
-//    }
-    if(this.target!=null){
-      this.target.replaceParameters(params);
+    if (this.targetQuery != null) {
+      targetQuery.replaceParameters(params);
     }
     for (OUpdateOperations ops : operations) {
       ops.replaceParameters(params);

@@ -96,6 +96,10 @@ public interface OCluster {
 
   void synch() throws IOException;
 
+  void setSoftlyClosed(boolean softlyClosed) throws IOException;
+
+  boolean wasSoftlyClosed() throws IOException;
+
   String getName();
 
   /**

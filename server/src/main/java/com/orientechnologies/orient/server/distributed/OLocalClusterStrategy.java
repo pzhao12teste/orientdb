@@ -20,7 +20,6 @@
 package com.orientechnologies.orient.server.distributed;
 
 import com.orientechnologies.common.exception.OException;
-import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -81,31 +80,14 @@ public class OLocalClusterStrategy implements OClusterSelectionStrategy {
     final int[] clusterIds = cls.getClusterIds();
     final List<String> clusterNames = new ArrayList<String>(clusterIds.length);
     for (int c : clusterIds)
-      clusterNames.add(db.getClusterNameById(c).toLowerCase());
+      clusterNames.add(db.getClusterNameById(c));
 
     final ODistributedConfiguration cfg = manager.getDatabaseConfiguration(databaseName);
 
     final String bestCluster = cfg.getLocalCluster(clusterNames, nodeName);
-    if (bestCluster == null) {
-
-      // FILL THE MAP CLUSTER/SERVERS
-      final StringBuilder buffer = new StringBuilder();
-      for (String c : clusterNames) {
-        if (buffer.length() > 0)
-          buffer.append(" ");
-
-        buffer.append("cluster ");
-        buffer.append(c);
-        buffer.append(": ");
-        buffer.append(cfg.getServers(c, null));
-      }
-
-      OLogManager.instance().warn(this, "Cannot find best cluster for class '%s'. Configured servers for clusters %s are %s",
-          cls.getName(), clusterNames, buffer.toString());
-
-      throw new OException(
-          "Cannot find best cluster for class '" + cls.getName() + "' on server '" + nodeName + "'. ClusterStrategy=" + getName());
-    }
+    if (bestCluster == null)
+      throw new OException("Cannot find best cluster for class '" + cls.getName() + "' on server '" + nodeName
+          + "'. ClusterStrategy=" + getName());
 
     bestClusterId = db.getClusterIdByName(bestCluster);
   }

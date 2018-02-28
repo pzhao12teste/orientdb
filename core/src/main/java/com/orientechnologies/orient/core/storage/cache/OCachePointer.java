@@ -25,7 +25,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.orientechnologies.common.directmemory.ODirectMemoryPointer;
-import com.orientechnologies.common.directmemory.ODirectMemoryPointerFactory;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.wal.OLogSequenceNumber;
 
 /**
@@ -61,7 +60,7 @@ public class OCachePointer {
 
   public OCachePointer(byte[] data, OLogSequenceNumber lastFlushedLsn, long fileId, long pageIndex) {
     this.lastFlushedLsn = lastFlushedLsn;
-    dataPointer = ODirectMemoryPointerFactory.instance().createPointer(data);
+    dataPointer = new ODirectMemoryPointer(data);
 
     this.fileId = fileId;
     this.pageIndex = pageIndex;
@@ -182,13 +181,9 @@ public class OCachePointer {
   }
 
   public void decrementReferrer() {
-    final int rf = referrersCount.decrementAndGet();
-    if (rf == 0) {
+    if (referrersCount.decrementAndGet() == 0) {
       dataPointer.free();
     }
-
-    if (rf < 0)
-      throw new IllegalStateException("Invalid direct memory state, number of referrers can not be negative " + rf);
   }
 
   public ODirectMemoryPointer getDataPointer() {

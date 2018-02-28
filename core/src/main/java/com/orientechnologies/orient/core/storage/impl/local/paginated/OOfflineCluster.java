@@ -100,8 +100,8 @@ public class OOfflineCluster implements OCluster {
         return storageLocal.setClusterStatus(id, OStorageClusterConfiguration.STATUS.valueOf(stringValue.toUpperCase()));
       }
       default:
-        throw new IllegalArgumentException(
-            "Runtime change of attribute '" + attribute + " is not supported on Offline cluster " + getName());
+        throw new IllegalArgumentException("Runtime change of attribute '" + attribute + " is not supported on Offline cluster "
+            + getName());
       }
 
     } finally {
@@ -146,15 +146,13 @@ public class OOfflineCluster implements OCluster {
 
   @Override
   public ORawBuffer readRecord(long clusterPosition) throws IOException {
-    throw new ORecordNotFoundException("Record with rid #" + id + ":" + clusterPosition + " was not found in database",
-        new OOfflineClusterException("Cannot read a record from the offline cluster '" + name + "'"));
+    throw new OOfflineClusterException("Cannot read a record from the offline cluster '" + name + "'");
   }
 
   @Override
-  public ORawBuffer readRecordIfVersionIsNotLatest(long clusterPosition, ORecordVersion recordVersion)
-      throws IOException, ORecordNotFoundException {
-    throw new ORecordNotFoundException("Record with rid #" + id + ":" + clusterPosition + " was not found in database",
-        new OOfflineClusterException("Cannot read a record from the offline cluster '" + name + "'"));
+  public ORawBuffer readRecordIfVersionIsNotLatest(long clusterPosition, ORecordVersion recordVersion) throws IOException,
+      ORecordNotFoundException {
+    throw new OOfflineClusterException("Cannot read a record from the offline cluster '" + name + "'");
   }
 
   @Override
@@ -195,6 +193,16 @@ public class OOfflineCluster implements OCluster {
   @Override
   public void synch() throws IOException {
 
+  }
+
+  @Override
+  public void setSoftlyClosed(boolean softlyClosed) throws IOException {
+
+  }
+
+  @Override
+  public boolean wasSoftlyClosed() throws IOException {
+    return false;
   }
 
   @Override

@@ -21,9 +21,12 @@
 package com.orientechnologies.orient.core.index;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.id.ORID;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.serialization.serializer.stream.OStreamSerializer;
 
 /**
@@ -41,11 +44,14 @@ public interface OIndexEngine<V> {
 
   void deleteWithoutLoad(String indexName);
 
-  void load(String indexName, OIndexDefinition indexDefinition, OStreamSerializer valueSerializer, boolean isAutomatic);
+  void load(ORID indexRid, String indexName, OIndexDefinition indexDefinition, OStreamSerializer valueSerializer,
+      boolean isAutomatic);
 
   boolean contains(Object key);
 
   boolean remove(Object key);
+
+  ORID getIdentity();
 
   void clear();
 

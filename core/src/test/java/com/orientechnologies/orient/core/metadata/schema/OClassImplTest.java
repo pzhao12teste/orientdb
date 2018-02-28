@@ -465,6 +465,34 @@ public class OClassImplTest {
   }
 
   @Test
+  public void testReservedWords() {
+    Set<String> reserved = new HashSet<String>();
+    // reserved.add("select");
+    reserved.add("traverse");
+    reserved.add("insert");
+    reserved.add("update");
+    reserved.add("delete");
+    reserved.add("from");
+    reserved.add("where");
+    reserved.add("skip");
+    reserved.add("limit");
+    reserved.add("timeout");
+
+    final OSchema oSchema = db.getMetadata().getSchema();
+    OClass foo = oSchema.createClass("OClassImplTest_testReservedWords");
+
+    for (String s : reserved) {
+      try {
+        foo.createProperty(s, OType.STRING);
+        fail();
+      } catch (OSchemaException x) {
+        System.out.println(x.getMessage());
+      }
+    }
+
+  }
+
+  @Test
   public void testClassNameSyntax() {
 
     final OSchema oSchema = db.getMetadata().getSchema();
@@ -477,7 +505,7 @@ public class OClassImplTest {
     assertNotNull(oSchema.createClass("$OClassImplTesttestCla23ssNameSyntax_12"));
     assertNotNull(oSchema.createClass("OClassImplTesttestC$la23ssNameSyntax_12"));
     assertNotNull(oSchema.createClass("oOClassImplTesttestC$la23ssNameSyntax_12"));
-    String[] invalidClassNames = { "foo bar", "12", "#12", "12AAA", ",asdfasdf", "adsf,asdf", "asdf.sadf", ".asdf", "asdfaf.", "asdf:asdf" };
+    String[] invalidClassNames = { "foo bar", "12", "#12", "12AAA", "%adsf", ",asdfasdf", "adsf,asdf", "asdf.sadf", ".asdf", "asdfaf.", "asdf:asdf" };
     for (String s : invalidClassNames) {
       try {
         oSchema.createClass(s);

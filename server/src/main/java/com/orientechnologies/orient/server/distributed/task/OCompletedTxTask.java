@@ -75,7 +75,7 @@ public class OCompletedTxTask extends OAbstractReplicatedTask {
 
   @Override
   public OCommandDistributedReplicateRequest.QUORUM_TYPE getQuorumType() {
-    return OCommandDistributedReplicateRequest.QUORUM_TYPE.NONE;
+    return OCommandDistributedReplicateRequest.QUORUM_TYPE.ALL;
   }
 
   @Override

@@ -93,7 +93,6 @@ public abstract class OrientGraphRemoteTest extends OrientGraphTest {
 
     graph = factory.getTx();
     graph.setWarnOnForceClosingTx(false);
-    graph.setStandardExceptions(true);
 
     currentGraphs.put(url, graph);
 

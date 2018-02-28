@@ -169,7 +169,6 @@ public class OrientGraphNoTxRemoteTest extends GraphTest {
 
     graph = factory.getNoTx();
     graph.setWarnOnForceClosingTx(false);
-    graph.setStandardExceptions(true);
 
     currentGraphs.put(url, graph);
 

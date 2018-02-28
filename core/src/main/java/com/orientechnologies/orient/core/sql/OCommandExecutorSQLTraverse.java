@@ -19,6 +19,13 @@
  */
 package com.orientechnologies.orient.core.sql;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.command.OCommandContext;
 import com.orientechnologies.orient.core.command.OCommandRequest;
@@ -27,8 +34,6 @@ import com.orientechnologies.orient.core.command.traverse.OTraverse;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.exception.OQueryParsingException;
 import com.orientechnologies.orient.core.serialization.serializer.OStringSerializerHelper;
-
-import java.util.*;
 
 /**
  * Executes a TRAVERSE crossing records. Returns a List<OIdentifiable> containing all the traversed records that match the WHERE
@@ -109,7 +114,7 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
 
       parserSkipWhiteSpaces();
 
-      while (!parserIsEnded()) {
+      if (!parserIsEnded()) {
         if (parserOptionalKeyword(KEYWORD_LIMIT, KEYWORD_SKIP, KEYWORD_OFFSET, KEYWORD_TIMEOUT, KEYWORD_MAXDEPTH, KEYWORD_STRATEGY)) {
           final String w = parserGetLastWord();
           if (w.equals(KEYWORD_LIMIT))
@@ -130,7 +135,7 @@ public class OCommandExecutorSQLTraverse extends OCommandExecutorSQLResultsetAbs
       else
         traverse.limit(limit);
 
-      traverse.getContext().setParent(iRequest.getContext());
+      traverse.getContext().setChild(iRequest.getContext());
     } finally {
       textRequest.setText(originalQuery);
     }

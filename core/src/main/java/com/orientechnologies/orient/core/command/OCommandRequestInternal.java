@@ -19,28 +19,29 @@
   */
 package com.orientechnologies.orient.core.command;
 
+import java.util.Map;
+
 import com.orientechnologies.common.listener.OProgressListener;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
-
-import java.util.Map;
 
 /**
  * Internal specialization of generic OCommand interface.
  * 
  * @author Luca Garulli
  * 
+ * @param <T>
  */
 public interface OCommandRequestInternal extends OCommandRequest, OSerializableStream {
 
-  Map<Object, Object> getParameters();
+  public Map<Object, Object> getParameters();
 
-  OCommandResultListener getResultListener();
+  public OCommandResultListener getResultListener();
 
-  void setResultListener(OCommandResultListener iListener);
+  public void setResultListener(OCommandResultListener iListener);
 
-  OProgressListener getProgressListener();
+  public OProgressListener getProgressListener();
 
-  OCommandRequestInternal setProgressListener(OProgressListener iProgressListener);
+  public OCommandRequestInternal setProgressListener(OProgressListener iProgressListener);
 
-  void reset();
+  public void reset();
 }

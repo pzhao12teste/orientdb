@@ -24,6 +24,7 @@ import com.orientechnologies.orient.core.command.OCommandRequest;
 import com.orientechnologies.orient.core.db.ODatabaseDocumentInternal;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -73,16 +74,18 @@ public abstract class OIndexRemote<T> implements OIndex<T> {
   protected final String        databaseName;
   private final String          wrappedType;
   private final String          algorithm;
+  private final ORID            rid;
   protected OIndexDefinition    indexDefinition;
   protected String              name;
   protected ODocument           configuration;
   protected Set<String>         clustersToIndex;
 
-  public OIndexRemote(final String iName, final String iWrappedType, final String algorithm,
+  public OIndexRemote(final String iName, final String iWrappedType, final String algorithm, final ORID iRid,
       final OIndexDefinition iIndexDefinition, final ODocument iConfiguration, final Set<String> clustersToIndex) {
     this.name = iName;
     this.wrappedType = iWrappedType;
     this.algorithm = algorithm;
+    this.rid = iRid;
     this.indexDefinition = iIndexDefinition;
     this.configuration = iConfiguration;
     this.clustersToIndex = new HashSet<String>(clustersToIndex);
@@ -240,6 +243,10 @@ public abstract class OIndexRemote<T> implements OIndex<T> {
   @Override
   public ODocument getMetadata() {
     return configuration.field("metadata", OType.EMBEDDED);
+  }
+
+  public ORID getIdentity() {
+    return rid;
   }
 
   public void commit(final ODocument iDocument) {

@@ -26,7 +26,6 @@ import com.orientechnologies.orient.core.config.OStorageConfiguration;
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.db.record.ORecordElement;
-import com.orientechnologies.orient.core.exception.OCommandExecutionException;
 import com.orientechnologies.orient.core.exception.OQueryParsingException;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
 import com.orientechnologies.orient.core.id.ORID;
@@ -37,12 +36,16 @@ import com.orientechnologies.orient.core.serialization.serializer.OStringSeriali
 import com.orientechnologies.orient.core.sql.OSQLHelper;
 import com.orientechnologies.orient.core.sql.functions.OSQLFunctionRuntime;
 import com.orientechnologies.orient.core.sql.operator.OQueryOperator;
-import com.orientechnologies.orient.core.sql.operator.OQueryOperatorMatches;
 import com.orientechnologies.orient.core.sql.query.OSQLQuery;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -85,8 +88,7 @@ public class OSQLFilterCondition {
 
     Object r = evaluate(iCurrentRecord, iCurrentResult, right, iContext);
 
-    // no collate for regular expressions, otherwise quotes will result in no match
-    final OCollate collate = operator instanceof OQueryOperatorMatches ? null : getCollate();
+    final OCollate collate = getCollate();
 
     final Object[] convertedValues = checkForConversion(iCurrentRecord, l, r, collate);
     if (convertedValues != null) {
@@ -108,8 +110,6 @@ public class OSQLFilterCondition {
     Object result;
     try {
       result = operator.evaluateRecord(iCurrentRecord, iCurrentResult, this, l, r, iContext);
-    } catch (OCommandExecutionException e) {
-      throw e;
     } catch (Exception e) {
       result = Boolean.FALSE;
     }
@@ -300,14 +300,11 @@ public class OSQLFilterCondition {
     if (iValue == null)
       return null;
 
-    if (iCurrentRecord != null) {
-      iCurrentRecord = iCurrentRecord.getRecord();
-      if (iCurrentRecord != null && ((ODocument) iCurrentRecord).getInternalStatus() == ORecordElement.STATUS.NOT_LOADED) {
-        try {
-          iCurrentRecord = iCurrentRecord.getRecord().load();
-        } catch (ORecordNotFoundException e) {
-          return null;
-        }
+    if (iCurrentRecord != null && iCurrentRecord.getRecord().getInternalStatus() == ORecordElement.STATUS.NOT_LOADED) {
+      try {
+        iCurrentRecord = iCurrentRecord.getRecord().load();
+      } catch (ORecordNotFoundException e) {
+        return null;
       }
     }
 

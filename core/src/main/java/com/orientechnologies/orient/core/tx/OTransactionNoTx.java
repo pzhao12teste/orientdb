@@ -67,10 +67,6 @@ public class OTransactionNoTx extends OTransactionAbstract {
   }
 
   @Override
-  public void restore() {
-  }
-
-  @Override
   public void commit(boolean force) {
   }
 
@@ -115,23 +111,28 @@ public class OTransactionNoTx extends OTransactionAbstract {
     if (rid.isNew())
       return null;
 
-    final ODatabaseDocumentTx.RecordReader recordReader;
-    if (force) {
-      recordReader = new ODatabaseDocumentTx.SimpleRecordReader();
-    } else {
-      recordReader = new ODatabaseDocumentTx.LatestVersionRecordReader();
-    }
+    try {
+      final ODatabaseDocumentTx.RecordReader recordReader;
+      if (force) {
+        recordReader = new ODatabaseDocumentTx.SimpleRecordReader();
+      } else {
+        recordReader = new ODatabaseDocumentTx.LatestVersionRecordReader();
+      }
 
-    final ORecord loadedRecord = database.executeReadRecord((ORecordId) rid, record, null, fetchPlan, ignoreCache, !ignoreCache,
-        false, OStorage.LOCKING_STRATEGY.NONE, recordReader);
+      final ORecord loadedRecord = database.executeReadRecord((ORecordId) rid, record, null, fetchPlan, ignoreCache, !ignoreCache,
+          false, OStorage.LOCKING_STRATEGY.NONE, recordReader);
 
-    if (force) {
-      return loadedRecord;
-    } else {
-      if (loadedRecord == null)
-        return record;
+      if (force) {
+        return loadedRecord;
+      } else {
+        if (loadedRecord == null)
+          return record;
 
-      return loadedRecord;
+        return loadedRecord;
+      }
+
+    } catch (ORecordNotFoundException e) {
+      return null;
     }
   }
 

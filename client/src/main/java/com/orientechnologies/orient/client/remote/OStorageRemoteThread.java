@@ -208,11 +208,6 @@ public class OStorageRemoteThread implements OStorageProxy {
     return delegate;
   }
 
-  @Override
-  public boolean isRemote() {
-    return true;
-  }
-
   public Set<String> getClusterNames() {
     pushSession();
     try {

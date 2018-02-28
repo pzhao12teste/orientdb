@@ -517,12 +517,6 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
     sqlCommand("move", iCommandText, "\nMove vertex command executed with result '%s' in %f sec(s).\n", true);
   }
 
-  @ConsoleCommand(splitInWords = false, description = "Optimizes the current database", onlineHelp = "SQL-Optimize-Database")
-  public void optimizeDatabase(
-      @ConsoleParameter(name = "command-text", description = "The command text to execute") String iCommandText) {
-    sqlCommand("optimize", iCommandText, "\nDatabase optimized in %f sec(s).\n", true);
-  }
-
   @ConsoleCommand(description = "Force calling of JVM Garbage Collection")
   public void gc() {
     System.gc();
@@ -1190,19 +1184,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
       message("\nSuper classes........: " + Arrays.toString(cls.getSuperClassesNames().toArray()));
     message("\nDefault cluster......: " + currentDatabase.getClusterNameById(cls.getDefaultClusterId()) + " (id="
         + cls.getDefaultClusterId() + ")");
-
-    final StringBuilder clusters = new StringBuilder();
-    for (int clId : cls.getClusterIds()) {
-      if (clusters.length() > 0)
-        clusters.append(", ");
-
-      clusters.append(currentDatabase.getClusterNameById(clId));
-      clusters.append("(");
-      clusters.append(clId);
-      clusters.append(")");
-    }
-    message("\nSupported clusters...: " + clusters.toString());
-
+    message("\nSupported cluster ids: " + Arrays.toString(cls.getClusterIds()));
     message("\nCluster selection....: " + cls.getClusterSelection().getName());
     message("\nOversize.............: " + cls.getClassOverSize());
 
@@ -1409,7 +1391,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
   @ConsoleCommand(description = "Display all the configured clusters", aliases = { "clusters" }, onlineHelp = "Console-Command-List-Clusters")
   public void listClusters() {
     if (currentDatabaseName != null) {
-      message("\n\nCLUSTERS (collections)");
+      message("\n\nCLUSTERS");
       message("\n----------------------------------------------+-------+-------------------+----------------+");
       message("\n NAME                                         | ID    | CONFLICT STRATEGY | RECORDS        |");
       message("\n----------------------------------------------+-------+-------------------+----------------+");
@@ -1442,7 +1424,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
       message("\n----------------------------------------------+-------+-------------------+----------------+");
       message("\n TOTAL = %-3d                                                              |%15d |", clusters.size(),
           totalElements);
-      message("\n--------------------------------------------------------------------------+----------------+");
+      message("\n------------------------------------------------------+-------------------+----------------+");
     } else
       message("\nNo database selected yet.");
   }
@@ -1730,7 +1712,7 @@ public class OConsoleDatabaseApp extends OrientConsole implements OCommandOutput
       } catch (NoSuchMethodException ignored) {
       }
 
-    out.println(new StringBuilder("Backup in progress of current database to: ").append(iText).append("..."));
+    out.println(new StringBuilder("Backuping current database to: ").append(iText).append("..."));
 
     final String fileName = items.size() <= 0 || items.get(1).charAt(0) == '-' ? null : items.get(1);
 

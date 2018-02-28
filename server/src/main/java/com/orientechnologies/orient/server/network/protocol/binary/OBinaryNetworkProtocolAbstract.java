@@ -239,8 +239,8 @@ public abstract class OBinaryNetworkProtocolAbstract extends ONetworkProtocol {
     } catch (Throwable t) {
       sendErrorOrDropConnection(clientTxId, t);
     } finally {
-      Orient.instance().getProfiler().stopChrono("server.network.requests", "Total received requests", timer,
-          "server.network.requests");
+      Orient.instance().getProfiler()
+          .stopChrono("server.network.requests", "Total received requests", timer, "server.network.requests");
 
       OSerializationThreadLocal.INSTANCE.get().clear();
     }
@@ -285,9 +285,12 @@ public abstract class OBinaryNetworkProtocolAbstract extends ONetworkProtocol {
       }
     }
 
-    OLogManager.instance().info(this, "Created database '%s' of type '%s'", iDatabase.getName(),
-        iDatabase.getStorage().getUnderlying() instanceof OAbstractPaginatedStorage
-            ? iDatabase.getStorage().getUnderlying().getType() : "memory");
+    OLogManager.instance().info(
+        this,
+        "Created database '%s' of type '%s'",
+        iDatabase.getName(),
+        iDatabase.getStorage().getUnderlying() instanceof OAbstractPaginatedStorage ? iDatabase.getStorage().getUnderlying()
+            .getType() : "memory");
 
     // if (iDatabase.getStorage() instanceof OStorageLocal)
     // // CLOSE IT BECAUSE IT WILL BE OPEN AT FIRST USE
@@ -334,16 +337,11 @@ public abstract class OBinaryNetworkProtocolAbstract extends ONetworkProtocol {
 
       iDatabase.delete(rid, version);
       return 1;
-    } catch (ORecordNotFoundException e) {
-      // MAINTAIN COHERENT THE BEHAVIOR FOR ALL THE STORAGE TYPES
-      if (e.getCause() instanceof OOfflineClusterException)
-        throw (OOfflineClusterException) e.getCause();
     } catch (OOfflineClusterException e) {
       throw e;
     } catch (Exception e) {
-      // IGNORE IT
+      return 0;
     }
-    return 0;
   }
 
   protected int hideRecord(final ODatabaseDocument iDatabase, final ORID rid) {
@@ -375,15 +373,9 @@ public abstract class OBinaryNetworkProtocolAbstract extends ONetworkProtocol {
 
     ORecordInternal.setContentChanged(newRecord, updateContent);
 
-    ORecord currentRecord = null;
+    final ORecord currentRecord;
     if (newRecord instanceof ODocument) {
-      try {
-        currentRecord = iDatabase.load(rid);
-      } catch (ORecordNotFoundException e) {
-        // MAINTAIN COHERENT THE BEHAVIOR FOR ALL THE STORAGE TYPES
-        if (e.getCause() instanceof OOfflineClusterException)
-          throw (OOfflineClusterException) e.getCause();
-      }
+      currentRecord = iDatabase.load(rid);
 
       if (currentRecord == null)
         throw new ORecordNotFoundException(rid.toString());

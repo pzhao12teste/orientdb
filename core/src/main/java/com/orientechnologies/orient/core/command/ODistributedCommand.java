@@ -20,9 +20,6 @@
 
 package com.orientechnologies.orient.core.command;
 
-import com.orientechnologies.orient.core.replication.OAsyncReplicationError;
-import com.orientechnologies.orient.core.replication.OAsyncReplicationOk;
-
 import java.util.Set;
 
 /**
@@ -30,15 +27,5 @@ import java.util.Set;
  * @since 7/2/14
  */
 public interface ODistributedCommand {
-  Set<String> nodesToExclude();
-
-  /**
-   * Defines a callback to call in case of the asynchronous replication succeed.
-   */
-  ODistributedCommand onAsyncReplicationOk(OAsyncReplicationOk iCallback);
-
-  /**
-   * Defines a callback to call in case of error during the asynchronous replication.
-   */
-  ODistributedCommand onAsyncReplicationError(OAsyncReplicationError iCallback);
+	Set<String> nodesToExclude();
 }

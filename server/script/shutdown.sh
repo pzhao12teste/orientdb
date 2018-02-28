@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (c) Orient Technologies LTD (http://www.orientechnologies.com)
 #
@@ -57,7 +57,7 @@ JAVA_OPTS=-Djava.awt.headless=true
 
 if [ "x$wait" = "xyes" ] ; then
   while true ; do
-        ps auxw | grep java | grep $ORIENTDB_HOME/lib/orientdb-server > /dev/null || break
+    ps -ef | grep java | grep $ORIENTDB_HOME/lib/orientdb-server > /dev/null || break
     sleep 1;
   done
 fi

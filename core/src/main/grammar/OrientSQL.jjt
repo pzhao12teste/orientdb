@@ -58,42 +58,14 @@ public class OrientSql {
 
 PARSER_END(OrientSql)
 
-
 SKIP :
 {
   " "
 | "\t"
 | "\n"
 | "\r"
-| "\f"
 }
 
-/* COMMENTS */
-
-MORE :
-{
-  <"/**" ~["/"]> { input_stream.backup(1); } : IN_FORMAL_COMMENT
-|
-  "/*" : IN_MULTI_LINE_COMMENT
-}
-
-<IN_FORMAL_COMMENT>
-SPECIAL_TOKEN :
-{
-  <FORMAL_COMMENT: "*/" > : DEFAULT
-}
-
-<IN_MULTI_LINE_COMMENT>
-SPECIAL_TOKEN :
-{
-  <MULTI_LINE_COMMENT: "*/" > : DEFAULT
-}
-
-<IN_FORMAL_COMMENT,IN_MULTI_LINE_COMMENT>
-MORE :
-{
-  < ~[] >
-}
 
 /* reserved words */
 TOKEN:
@@ -409,7 +381,7 @@ TOKEN :
 
 TOKEN :
 {
-  < IDENTIFIER: ( ((<DOLLAR>) | <LETTER>) (<PART_LETTER>)* ) >
+  < IDENTIFIER: ( (<DOLLAR>)? <LETTER> (<PART_LETTER>)* ) >
 |
   < QUOTED_IDENTIFIER: ( "`" (~["`"]) (~["`"])*  "`") >
 |
@@ -422,8 +394,6 @@ TOKEN :
   < INDEXVALUESDESC_IDENTIFIER: ( "I" | "i") ( "N" | "n") ( "D" | "d") ( "E" | "e") ( "X" | "x") ( "V" | "v") ( "A" | "a") ( "L" | "l") ( "U" | "u") ( "E" | "e") ( "S" | "s") ( "D" | "d") ( "E" | "e") ( "S" | "s") ( "C" | "c") ":" <IDENTIFIER> ( ( <DOT> | <MINUS> ) <IDENTIFIER> )*  >
 |
   < CLUSTER_IDENTIFIER: <CLUSTER> <COLON> <IDENTIFIER>  >
-|
-  < CLUSTER_NUMBER_IDENTIFIER: <CLUSTER> <COLON> <INTEGER_LITERAL>  >
 |
   < METADATA_IDENTIFIER: "metadata:" <IDENTIFIER>  >
 |
@@ -511,6 +481,158 @@ OIdentifier Identifier():
     token = <EXCEPTION>
     |
     quotedToken = <QUOTED_IDENTIFIER>
+    /*
+    (
+    //TODO REPLACE THIS WITH <QUOTED_IDENTIFIER>
+        <BACKTICK>
+        (
+            token = <IDENTIFIER>
+            |
+            token = <SELECT>
+            |
+            token = <TRAVERSE>
+            |
+            token = <INSERT>
+            |
+            token = <CREATE>
+            |
+            token = <DELETE>
+            |
+            token = <VERTEX>
+            |
+            token = <EDGE>
+            |
+            token = <UPDATE>
+            |
+            token = <UPSERT>
+            |
+            token = <FROM>
+            |
+            token = <TO>
+            |
+            token = <WHERE>
+            |
+            token = <WHILE>
+            |
+            token = <INTO>
+            |
+            token = <VALUES>
+            |
+            token = <SET>
+            |
+            token = <ADD>
+            |
+            token = <PUT>
+            |
+            token = <MERGE>
+            |
+            token = <CONTENT>
+            |
+            token = <REMOVE>
+            |
+            token = <INCREMENT>
+            |
+            token = <AND>
+            |
+            token = <OR>
+            |
+            token = <NULL>
+            |
+            token = <DEFINED>
+            |
+            token = <ORDER>
+            |
+            token = <GROUP>
+            |
+            token = <BY>
+            |
+            token = <LIMIT>
+            |
+            token = <SKIP2>
+            |
+            token = <OFFSET>
+            |
+            token = <TIMEOUT>
+            |
+            token = <ASC>
+            |
+            token = <AS>
+            |
+            token = <DESC>
+            |
+            token = <FETCHPLAN>
+            |
+            token = <RETURN>
+            |
+            token = <BEFORE>
+            |
+            token = <AFTER>
+            |
+            token = <LOCK>
+            |
+            token = <RECORD>
+            |
+            token = <WAIT>
+            |
+            token = <RETRY>
+            |
+            token = <LET>
+            |
+            token = <NOCACHE>
+            |
+            token = <UNSAFE>
+            |
+            token = <PARALLEL>
+            |
+            token = <STRATEGY>
+            |
+            token = <DEPTH_FIRST>
+            |
+            token = <BREADTH_FIRST>
+            |
+            token = <LUCENE>
+            |
+            token = <NEAR>
+            |
+            token = <WITHIN>
+            |
+            token = <UNWIND>
+            |
+            token = <MAXDEPTH>
+            |
+            token = <NOT>
+            |
+            token = <IN>
+            |
+            token = <LIKE>
+            |
+            token = <IS>
+            |
+            token = <BETWEEN>
+            |
+            token = <CONTAINS>
+            |
+            token = <CONTAINSALL>
+            |
+            token = <CONTAINSKEY>
+            |
+            token = <CONTAINSVALUE>
+            |
+            token = <CONTAINSTEXT>
+            |
+            token = <MATCHES>
+            |
+            token = <KEY>
+            |
+            token = <INSTANCEOF>
+            |
+            token = <CLUSTER>
+            |
+            token = <EXCEPTION>
+        )
+        <BACKTICK>
+    )
+    */
 ) {
 
     if(token!=null){
@@ -726,7 +848,6 @@ ODeleteVertexStatement DeleteVertexStatement():
 (
 	<DELETE>
 	<VERTEX>
-	[ <FROM> {jjtThis.from = true;} ]
 	jjtThis.fromClause = FromClause()
 	[ <RETURN> <BEFORE> { jjtThis.returnBefore = true; } ]
 	[ <WHERE> jjtThis.whereClause = WhereClause() ]
@@ -1010,14 +1131,25 @@ ODeleteEdgeStatement DeleteEdgeWhereStatement():
 }
 
 OUpdateStatement UpdateStatement():
-{
-    OUpdateOperations lastOperations;
-    ORid lastRid;
- }
+{ OUpdateOperations lastOperations; }
 {
     (
     	<UPDATE>
-    	jjtThis.target = FromClause()
+    	(
+    	    jjtThis.targetRid = Rid()
+    	    |
+    		jjtThis.targetClass = Identifier()
+    		|
+    		jjtThis.targetCluster = Cluster()
+    		|
+    		jjtThis.targetIndex = IndexIdentifier()
+    		|
+    		(
+    		    <LPAREN>
+    		    jjtThis.targetQuery = QueryStatement()
+    		    <RPAREN>
+    		)
+    	)
     	( lastOperations = UpdateOperations() { jjtThis.operations.add(lastOperations); } )+
     	[ <UPSERT> { jjtThis.upsert = true; } ]
     	[
@@ -1388,7 +1520,6 @@ OCreateEdgeStatement CreateEdgeStatement():
     [ jjtThis.body = InsertBody() ]
     [ jjtThis.retry = Retry() ]
     [ jjtThis.wait = Wait() ]
-    [ jjtThis.batch = Batch() ]
 ) {return jjtThis;}
 }
 
@@ -1522,17 +1653,10 @@ OArrayRangeSelector ArrayRangeSelector():
 
 
 String Alias():
+{ OIdentifier identifier; }
 {
-    OIdentifier identifier = null;
-    ORecordAttribute recordAttribute = null;
-}
-{
-    (
-        identifier = Identifier()
-        |
-        recordAttribute = RecordAttribute()
-    )
-	{return identifier!=null?identifier.getValue():recordAttribute.name;}
+	identifier = Identifier()
+	{return identifier.getValue();}
 }
 
 ORecordAttribute RecordAttribute():
@@ -1765,15 +1889,7 @@ OMathExpression ParenthesisExpression():
 {}
 {
     (
-	    <LPAREN>
-        (
-            jjtThis.expression = Expression()
-            |
-            jjtThis.statement = SelectStatement()
-            |
-            jjtThis.statement = InsertStatement()
-        )
-        <RPAREN>
+	    <LPAREN> ( jjtThis.expression = Expression() | jjtThis.statement = SelectStatement() ) <RPAREN>
 	)
 	{return jjtThis;}
 }
@@ -1916,8 +2032,6 @@ OCluster Cluster():
 {
     (
 	    cName = <CLUSTER_IDENTIFIER> {jjtThis.clusterName = cName.image.split(":")[1];}
-	    |
-	    cName = <CLUSTER_NUMBER_IDENTIFIER> {jjtThis.clusterNumber = Integer.parseInt(cName.image.split(":")[1]);}
 	)
     { return jjtThis; }
 }
@@ -2245,13 +2359,7 @@ OBooleanExpression InstanceofCondition():
 }
 {
     (
-        jjtThis.left = Expression() <INSTANCEOF> (
-           jjtThis.right = Identifier()
-           |
-           token = <STRING_LITERAL> { jjtThis.rightString = token.image; }
-           |
-           token = <CHARACTER_LITERAL> { jjtThis.rightString = token.image; }
-        )
+        jjtThis.left = Expression() <INSTANCEOF> ( jjtThis.right = Identifier() | token = <STRING_LITERAL> { jjtThis.rightString = token.image; } )
     )
     {return jjtThis;}
 }
@@ -2437,8 +2545,6 @@ OBooleanExpression MatchesCondition():
     	    ( token = <STRING_LITERAL> {jjtThis.right = token.image;} )
     	    |
     	    ( token = <CHARACTER_LITERAL> {jjtThis.right = token.image;} )
-    	    |
-    	    ( jjtThis.rightParam = InputParameter() )
     	)
     )
 
@@ -2759,8 +2865,6 @@ OJson Json():
             (
                 lastItem.leftIdentifier = Identifier()
                 |
-                token = <RECORD_ATTRIBUTE> {lastItem.leftString = token.image; }
-                |
                 token = <STRING_LITERAL> { lastItem.leftString = token.image.substring(1, token.image.length() - 1); }
                 |
                 token = <CHARACTER_LITERAL> { lastItem.leftString = token.image.substring(1, token.image.length() - 1); }
@@ -2772,8 +2876,6 @@ OJson Json():
                 { lastItem = new OJsonItem(); }
                 (
                     lastItem.leftIdentifier = Identifier()
-                    |
-                    token = <RECORD_ATTRIBUTE> {lastItem.leftString = token.image; }
                     |
                     token = <STRING_LITERAL> { lastItem.leftString = token.image.substring(1, token.image.length() - 1); }
                     |

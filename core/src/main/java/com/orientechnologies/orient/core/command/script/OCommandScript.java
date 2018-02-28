@@ -19,13 +19,12 @@
  */
 package com.orientechnologies.orient.core.command.script;
 
-import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
+import javax.script.CompiledScript;
+
 import com.orientechnologies.orient.core.command.OCommandRequestTextAbstract;
 import com.orientechnologies.orient.core.exception.OSerializationException;
 import com.orientechnologies.orient.core.serialization.OMemoryStream;
 import com.orientechnologies.orient.core.serialization.OSerializableStream;
-
-import javax.script.CompiledScript;
 
 /**
  * Script command request implementation. It just stores the request and delegated the execution to the configured OCommandExecutor.
@@ -37,10 +36,8 @@ import javax.script.CompiledScript;
  */
 @SuppressWarnings("serial")
 public class OCommandScript extends OCommandRequestTextAbstract {
-  private String                                                         language;
-  private CompiledScript                                                 compiledScript;
-
-  private OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE executionMode = OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE.LOCAL;
+  private String         language;
+  private CompiledScript compiledScript;
 
   public OCommandScript() {
     useCache = true;
@@ -75,17 +72,6 @@ public class OCommandScript extends OCommandRequestTextAbstract {
   public OSerializableStream fromStream(byte[] iStream) throws OSerializationException {
     final OMemoryStream buffer = new OMemoryStream(iStream);
     language = buffer.getAsString();
-
-    // FIX TO HANDLE USAGE OF EXECUTION MODE STARTING FROM v2.1.3
-    final int currPosition = buffer.getPosition();
-    final String value = buffer.getAsString();
-    try {
-      executionMode = OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE.valueOf(value);
-    } catch (IllegalArgumentException e) {
-      // OLD VERSION: RESET TO THE OLD POSITION
-      buffer.setPosition(currPosition);
-    }
-
     fromStream(buffer);
     return this;
   }
@@ -93,7 +79,6 @@ public class OCommandScript extends OCommandRequestTextAbstract {
   public byte[] toStream() throws OSerializationException {
     final OMemoryStream buffer = new OMemoryStream();
     buffer.setUtf8(language);
-    buffer.setUtf8(executionMode.name());
     return toStream(buffer);
   }
 
@@ -110,14 +95,5 @@ public class OCommandScript extends OCommandRequestTextAbstract {
     if (language != null)
       return language + "." + text;
     return "script." + text;
-  }
-
-  public OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE getExecutionMode() {
-    return executionMode;
-  }
-
-  public OCommandScript setExecutionMode(OCommandDistributedReplicateRequest.DISTRIBUTED_EXECUTION_MODE executionMode) {
-    this.executionMode = executionMode;
-    return this;
   }
 }

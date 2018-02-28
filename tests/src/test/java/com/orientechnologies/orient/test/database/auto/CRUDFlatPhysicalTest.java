@@ -68,7 +68,8 @@ public class CRUDFlatPhysicalTest extends DocumentDBBaseTest {
     for (int i = 0; i < TOT_RECORDS; i++)
       ids.add(i);
 
-    for (ORecordFlat rec : new ORecordIteratorCluster<ORecordFlat>(database, database, database.getClusterIdByName(CLUSTER_NAME))) {
+    for (ORecordFlat rec : new ORecordIteratorCluster<ORecordFlat>(database, database, database.getClusterIdByName(CLUSTER_NAME),
+        true, true)) {
       fields = rec.value().split("-");
 
       int i = Integer.parseInt(fields[0]);
@@ -82,7 +83,8 @@ public class CRUDFlatPhysicalTest extends DocumentDBBaseTest {
   public void updateRaw() {
     String[] fields;
 
-    for (ORecordFlat rec : new ORecordIteratorCluster<ORecordFlat>(database, database, database.getClusterIdByName(CLUSTER_NAME))) {
+    for (ORecordFlat rec : new ORecordIteratorCluster<ORecordFlat>(database, database, database.getClusterIdByName(CLUSTER_NAME),
+        true, true)) {
       fields = rec.value().split("-");
       int i = Integer.parseInt(fields[0]);
       if (i % 2 == 0) {
@@ -100,7 +102,8 @@ public class CRUDFlatPhysicalTest extends DocumentDBBaseTest {
     for (int i = 0; i < TOT_RECORDS; i++)
       ids.add(i);
 
-    for (ORecordFlat rec : new ORecordIteratorCluster<ORecordFlat>(database, database, database.getClusterIdByName(CLUSTER_NAME))) {
+    for (ORecordFlat rec : new ORecordIteratorCluster<ORecordFlat>(database, database, database.getClusterIdByName(CLUSTER_NAME),
+        true, true)) {
       fields = rec.value().split("-");
 
       int i = Integer.parseInt(fields[0]);

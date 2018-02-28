@@ -1,7 +1,5 @@
 package com.orientechnologies.orient.core.sql.parser;
 
-import java.util.Map;
-
 /**
  * Created by luigidellaquila on 06/02/15.
  */
@@ -63,11 +61,5 @@ public class OOrderByItem {
       result.append(" " + type);
     }
     return result.toString();
-  }
-
-  public void replaceParameters(Map<Object, Object> params) {
-    if(modifier!=null){
-      modifier.replaceParameters(params);
-    }
   }
 }

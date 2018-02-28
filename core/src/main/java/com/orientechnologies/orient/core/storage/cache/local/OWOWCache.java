@@ -19,33 +19,10 @@
  */
 package com.orientechnologies.orient.core.storage.cache.local;
 
-import java.io.EOFException;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.lang.management.ManagementFactory;
-import java.lang.ref.WeakReference;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.zip.CRC32;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
 import com.orientechnologies.common.concur.lock.ODistributedCounter;
 import com.orientechnologies.common.concur.lock.ONewLockManager;
 import com.orientechnologies.common.concur.lock.OReadersWriterSpinLock;
 import com.orientechnologies.common.directmemory.ODirectMemoryPointer;
-import com.orientechnologies.common.directmemory.ODirectMemoryPointerFactory;
 import com.orientechnologies.common.exception.OException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.serialization.types.OBinarySerializer;
@@ -690,6 +667,44 @@ public class OWOWCache extends OAbstractWriteCache implements OWriteCache, OCach
     }
   }
 
+  public void setSoftlyClosed(long fileId, boolean softlyClosed) throws IOException {
+    final int intId = extractFileId(fileId);
+
+    filesLock.acquireWriteLock();
+    try {
+      OFileClassic fileClassic = files.get(intId);
+      if (fileClassic != null && fileClassic.isOpen())
+        fileClassic.setSoftlyClosed(softlyClosed);
+    } finally {
+      filesLock.releaseWriteLock();
+    }
+  }
+
+  public void setSoftlyClosed(boolean softlyClosed) throws IOException {
+    filesLock.acquireWriteLock();
+    try {
+      for (long fileId : files.keySet())
+        setSoftlyClosed(fileId, softlyClosed);
+    } finally {
+      filesLock.releaseWriteLock();
+    }
+  }
+
+  public boolean wasSoftlyClosed(long fileId) throws IOException {
+    final int intId = extractFileId(fileId);
+
+    filesLock.acquireReadLock();
+    try {
+      OFileClassic fileClassic = files.get(intId);
+      if (fileClassic == null)
+        return false;
+
+      return fileClassic.wasSoftlyClosed();
+    } finally {
+      filesLock.releaseReadLock();
+    }
+  }
+
   public void deleteFile(long fileId) throws IOException {
     final int intId = extractFileId(fileId);
 
@@ -1198,8 +1213,7 @@ public class OWOWCache extends OAbstractWriteCache implements OWriteCache, OCach
 
     if (fileClassic.getFileSize() >= endPosition) {
       fileClassic.read(startPosition, content, content.length - 2 * PAGE_PADDING, PAGE_PADDING);
-
-      final ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(content);
+      final ODirectMemoryPointer pointer = new ODirectMemoryPointer(content);
 
       dataPointer = new OCachePointer(pointer, lastLsn, fileId, pageIndex);
     } else if (addNewPages) {
@@ -1208,7 +1222,7 @@ public class OWOWCache extends OAbstractWriteCache implements OWriteCache, OCach
 
       addAllocatedSpace(space);
 
-      final ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(content);
+      final ODirectMemoryPointer pointer = new ODirectMemoryPointer(content);
       dataPointer = new OCachePointer(pointer, lastLsn, fileId, pageIndex);
     } else
       return null;

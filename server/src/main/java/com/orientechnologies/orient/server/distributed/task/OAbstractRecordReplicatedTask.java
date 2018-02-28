@@ -70,8 +70,6 @@ public abstract class OAbstractRecordReplicatedTask extends OAbstractReplicatedT
     this.version = version;
   }
 
-  abstract void setLockRecord(boolean lockRecord);
-
   @Override
   public void writeExternal(final ObjectOutput out) throws IOException {
     out.writeUTF(rid.toString());

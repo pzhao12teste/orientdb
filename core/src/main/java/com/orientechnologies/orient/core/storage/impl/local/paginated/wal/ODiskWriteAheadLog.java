@@ -22,7 +22,6 @@ package com.orientechnologies.orient.core.storage.impl.local.paginated.wal;
 
 import com.orientechnologies.common.concur.lock.OInterruptedException;
 import com.orientechnologies.common.directmemory.ODirectMemoryPointer;
-import com.orientechnologies.common.directmemory.ODirectMemoryPointerFactory;
 import com.orientechnologies.common.io.OFileUtils;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.common.serialization.types.OIntegerSerializer;
@@ -36,7 +35,12 @@ import com.orientechnologies.orient.core.storage.impl.local.OLowDiskSpaceInforma
 import com.orientechnologies.orient.core.storage.impl.local.OLowDiskSpaceListener;
 import com.orientechnologies.orient.core.storage.impl.local.paginated.OLocalPaginatedStorage;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -178,7 +182,7 @@ public class ODiskWriteAheadLog extends OAbstractWriteAheadLog {
 
             ODirectMemoryPointer dataPointer;
             if (flushedPages == maxSize - 1) {
-              dataPointer = ODirectMemoryPointerFactory.instance().createPointer(OWALPage.PAGE_SIZE);
+              dataPointer = new ODirectMemoryPointer(OWALPage.PAGE_SIZE);
               page.getPagePointer().moveData(0, dataPointer, 0, OWALPage.PAGE_SIZE);
             } else {
               dataPointer = page.getPagePointer();
@@ -345,7 +349,7 @@ public class ODiskWriteAheadLog extends OAbstractWriteAheadLog {
 
       while (pos < record.length) {
         if (currentPage == null) {
-          ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(OWALPage.PAGE_SIZE);
+          ODirectMemoryPointer pointer = new ODirectMemoryPointer(OWALPage.PAGE_SIZE);
           currentPage = new OWALPage(pointer, true);
           pagesCache.add(currentPage);
           filledUpTo += OWALPage.RECORDS_OFFSET;
@@ -354,7 +358,7 @@ public class ODiskWriteAheadLog extends OAbstractWriteAheadLog {
         int freeSpace = currentPage.getFreeSpace();
         if (freeSpace < OWALPage.MIN_RECORD_SIZE) {
           filledUpTo += freeSpace + OWALPage.RECORDS_OFFSET;
-          ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(OWALPage.PAGE_SIZE);
+          ODirectMemoryPointer pointer = new ODirectMemoryPointer(OWALPage.PAGE_SIZE);
           currentPage = new OWALPage(pointer, true);
           pagesCache.add(currentPage);
           pageIndex++;
@@ -431,7 +435,7 @@ public class ODiskWriteAheadLog extends OAbstractWriteAheadLog {
         if (!checkPageIntegrity(pageContent))
           throw new OWALPageBrokenException("WAL page with index " + pageIndex + " is broken");
 
-        ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(pageContent);
+        ODirectMemoryPointer pointer = new ODirectMemoryPointer(pageContent);
         try {
           OWALPage page = new OWALPage(pointer, false);
 
@@ -555,12 +559,12 @@ public class ODiskWriteAheadLog extends OAbstractWriteAheadLog {
         rndFile.readFully(content);
 
         if (checkPageIntegrity(content)) {
-          ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(content);
+          ODirectMemoryPointer pointer = new ODirectMemoryPointer(content);
           currentPage = new OWALPage(pointer, false);
           filledUpTo = (pagesCount - 1) * OWALPage.PAGE_SIZE + currentPage.getFilledUpTo();
           nextPositionToFlush = (pagesCount - 1) * OWALPage.PAGE_SIZE;
         } else {
-          ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(OWALPage.PAGE_SIZE);
+          ODirectMemoryPointer pointer = new ODirectMemoryPointer(OWALPage.PAGE_SIZE);
           currentPage = new OWALPage(pointer, true);
           filledUpTo = pagesCount * OWALPage.PAGE_SIZE + currentPage.getFilledUpTo();
           nextPositionToFlush = pagesCount * OWALPage.PAGE_SIZE;

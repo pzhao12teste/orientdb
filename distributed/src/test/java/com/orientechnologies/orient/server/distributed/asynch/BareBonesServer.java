@@ -22,10 +22,8 @@ public class BareBonesServer {
     graph.executeOutsideTx(new OCallable<Object, OrientBaseGraph>() {
       @Override
       public Object call(OrientBaseGraph g) {
-        if (g.getEdgeType("edgetype") == null)
-          g.createEdgeType("edgetype");
-        if (g.getVertexType("vertextype") == null)
-          g.createVertexType("vertextype");
+        g.createEdgeType("edgetype");
+        g.createVertexType("vertextype");
         return null;
       }
     });

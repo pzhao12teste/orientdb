@@ -17,7 +17,6 @@
 package com.orientechnologies.common.serialization.types;
 
 import com.orientechnologies.common.directmemory.ODirectMemoryPointer;
-import com.orientechnologies.common.directmemory.ODirectMemoryPointerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -65,7 +64,7 @@ public class StringSerializerTest {
   public void testNativeDirectMemoryCompatibility() {
     stringSerializer.serializeNativeObject(OBJECT, stream, 7);
 
-    ODirectMemoryPointer pointer = ODirectMemoryPointerFactory.instance().createPointer(stream);
+    ODirectMemoryPointer pointer = new ODirectMemoryPointer(stream);
     try {
       Assert.assertEquals(stringSerializer.deserializeFromDirectMemoryObject(pointer, 7), OBJECT);
     } finally {

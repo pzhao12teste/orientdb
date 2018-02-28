@@ -129,7 +129,6 @@ public class OCommandExecutorSQLMoveVertex extends OCommandExecutorSQLSetAware i
       throw new OCommandExecutionException("Cannot execute the command because it has not been parsed yet");
 
     OModifiableBoolean shutdownGraph = new OModifiableBoolean();
-    final boolean txAlreadyBegun = getDatabase().getTransaction().isActive();
     final OrientGraph graph = OGraphCommandExecutorSQLFactory.getGraph(true, shutdownGraph);
     try {
       final Set<OIdentifiable> sourceRIDs = OSQLEngine.getInstance().parseRIDTarget(graph.getRawGraph(), source, context, iArgs);
@@ -167,18 +166,14 @@ public class OCommandExecutorSQLMoveVertex extends OCommandExecutorSQLSetAware i
         result.add(new ODocument().setTrackingChanges(false).field("old", oldVertex, OType.LINK)
             .field("new", newVertex, OType.LINK));
 
-        if (batch > 0 && result.size() % batch == 0) {
+        if (batch > 0 && result.size() % batch == 0)
           graph.commit();
-          graph.begin();
-        }
       }
 
       graph.commit();
 
       return result;
     } finally {
-      if (!txAlreadyBegun)
-        graph.commit();
 
       if (shutdownGraph.getValue())
         graph.shutdown(false);

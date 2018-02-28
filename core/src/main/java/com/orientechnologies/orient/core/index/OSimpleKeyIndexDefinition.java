@@ -161,13 +161,11 @@ public class OSimpleKeyIndexDefinition extends OAbstractIndexDefinition {
     if (collate != null) {
       setCollate(collate);
     } else {
-      final List<String> collatesNames = document.field("collates");
-      if( collatesNames != null ) {
-        OCompositeCollate collates = new OCompositeCollate(this);
-        for (String collateName : collatesNames)
-          collates.addCollate(OSQLEngine.getCollate(collateName));
-        this.collate = collates;
-      }
+      List<String> collatesNames = document.field("collates");
+      OCompositeCollate collates = new OCompositeCollate(this);
+      for (String collateName : collatesNames)
+        collates.addCollate(OSQLEngine.getCollate(collateName));
+      this.collate = collates;
     }
 
     setNullValuesIgnored(!Boolean.FALSE.equals(document.<Boolean> field("nullValuesIgnored")));

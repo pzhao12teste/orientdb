@@ -19,6 +19,12 @@
  */
 package com.orientechnologies.orient.server.distributed.task;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.orientechnologies.common.concur.ONeedRetryException;
 import com.orientechnologies.common.log.OLogManager;
 import com.orientechnologies.orient.core.command.OCommandDistributedReplicateRequest;
@@ -44,13 +50,6 @@ import com.orientechnologies.orient.server.distributed.ODistributedServerLog;
 import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIRECTION;
 import com.orientechnologies.orient.server.distributed.ODistributedServerManager;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
 /**
  * Distributed transaction task.
  *
@@ -62,7 +61,6 @@ public class OTxTask extends OAbstractReplicatedTask {
 
   private List<OAbstractRecordReplicatedTask> tasks            = new ArrayList<OAbstractRecordReplicatedTask>();
   private transient OTxTaskResult             result;
-  private transient boolean                   lockRecord       = true;
 
   public OTxTask() {
   }
@@ -100,7 +98,7 @@ public class OTxTask extends OAbstractReplicatedTask {
           } else {
             // UPDATE & DELETE: TRY EARLY LOCKING RECORD
             final ORID rid = task.getRid();
-            if (lockRecord && !ddb.lockRecord(rid, nodeSource))
+            if (!ddb.lockRecord(rid, nodeSource))
               throw new ODistributedRecordLockedException(rid);
 
             result.locks.add(rid);
@@ -217,34 +215,22 @@ public class OTxTask extends OAbstractReplicatedTask {
       // NO RESULT: NO UNDO NEEDED
       return null;
 
-    return getUndoTaskForLocalStorage(iBadResponse);
-  }
-
-  public OAbstractRemoteTask getUndoTaskForLocalStorage(final Object iBadResponse) {
-    final OFixTxTask fixTask = new OFixTxTask(result != null ? result.locks : new HashSet<ORID>());
+    final OFixTxTask fixTask = new OFixTxTask(result.locks);
 
     for (int i = 0; i < tasks.size(); ++i) {
       final OAbstractRecordReplicatedTask t = tasks.get(i);
 
       final OAbstractRemoteTask undoTask;
       if (iBadResponse instanceof List)
-        undoTask = t.getUndoTask(null, ((List<Object>) iBadResponse).get(i));
+        undoTask = t.getUndoTask(iRequest, ((List<Object>) iBadResponse).get(i));
       else
-        undoTask = t.getUndoTask(null, iBadResponse);
+        undoTask = t.getUndoTask(iRequest, iBadResponse);
 
       if (undoTask != null)
         fixTask.add(undoTask);
     }
 
     return fixTask;
-  }
-
-  public boolean isLockRecord() {
-    return lockRecord;
-  }
-
-  public void setLockRecord(final boolean lockRecord) {
-    this.lockRecord = lockRecord;
   }
 
   @Override

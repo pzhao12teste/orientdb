@@ -19,6 +19,8 @@
  */
 package com.orientechnologies.orient.core.sql.functions;
 
+import java.util.List;
+
 import com.orientechnologies.common.collection.OMultiValue;
 import com.orientechnologies.common.parser.OBaseParser;
 import com.orientechnologies.orient.core.command.OCommandContext;
@@ -37,8 +39,6 @@ import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemAbstract;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemField;
 import com.orientechnologies.orient.core.sql.filter.OSQLFilterItemVariable;
 import com.orientechnologies.orient.core.sql.filter.OSQLPredicate;
-
-import java.util.List;
 
 /**
  * Wraps function managing the binding of parameters.
@@ -157,7 +157,7 @@ public class OSQLFunctionRuntime extends OSQLFilterItemAbstract {
     for (int i = 0; i < iParameters.length; ++i) {
       this.configuredParameters[i] = iParameters[i];
 
-      if (iEvaluate)
+      if (i > 0 || iEvaluate)
         if (iParameters[i] != null) {
           if (iParameters[i] instanceof String && !iParameters[i].toString().startsWith("[")) {
             final Object v = OSQLHelper.parseValue(null, null, iParameters[i].toString(), null);

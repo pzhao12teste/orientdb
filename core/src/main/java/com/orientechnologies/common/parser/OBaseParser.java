@@ -238,11 +238,6 @@ public abstract class OBaseParser {
         throwSyntaxErrorException("Found unexpected keyword '" + parserLastWord + "' while it was expected '"
             + Arrays.toString(iWords) + "'");
     }
-
-    if (parserLastWord.length() > 1 && parserLastWord.charAt(0) == '`' && parserLastWord.charAt(parserLastWord.length() - 1) == '`') {
-      return parserLastWord.substring(1, parserLastWord.length() - 1);
-    }
-
     return parserLastWord.toString();
   }
 

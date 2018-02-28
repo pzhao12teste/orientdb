@@ -42,7 +42,6 @@ import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.impls.orient.OrientEdge;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
-import com.tinkerpop.blueprints.impls.orient.OrientElement;
 import com.tinkerpop.blueprints.impls.orient.OrientVertex;
 
 public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstract {
@@ -56,7 +55,9 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
 
   @Override
   public boolean execute(final OHttpRequest iRequest, OHttpResponse iResponse) throws Exception {
-    String[] urlParts = checkSyntax(iRequest.url, 4,
+    String[] urlParts = checkSyntax(
+        iRequest.url,
+        4,
         "Syntax error: gephi/<database>/<language>/<query-text>[/<limit>][/<fetchPlan>].<br>Limit is optional and is setted to 20 by default. Set expressely to 0 to have no limits.");
 
     final String language = urlParts[2];
@@ -73,17 +74,17 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
     final OrientGraph graph = OGraphCommandExecutorSQLFactory.getGraph(false, shutdownFlag);
     try {
 
-      final Iterable<OrientElement> vertices;
+      final Iterable<OrientVertex> vertices;
       if (language.equals("sql"))
         vertices = graph.command(new OSQLSynchQuery<OrientVertex>(text, limit).setFetchPlan(fetchPlan)).execute();
       else if (language.equals("gremlin")) {
         List<Object> result = new ArrayList<Object>();
         OGremlinHelper.execute(graph, text, null, null, result, null, null);
 
-        vertices = new ArrayList<OrientElement>(result.size());
+        vertices = new ArrayList<OrientVertex>(result.size());
 
         for (Object o : result) {
-          ((ArrayList<OrientElement>) vertices).add(graph.getVertex(o));
+          ((ArrayList<OrientVertex>) vertices).add(graph.getVertex(o));
         }
       } else
         throw new IllegalArgumentException("Language '" + language + "' is not supported. Use 'sql' or 'gremlin'");
@@ -92,7 +93,7 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
 
     } finally {
       if (graph != null && shutdownFlag.getValue())
-        graph.shutdown(false, false);
+        graph.shutdown();
 
       if (db != null)
         db.close();
@@ -101,7 +102,7 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
     return false;
   }
 
-  protected void sendRecordsContent(final OHttpRequest iRequest, final OHttpResponse iResponse, Iterable<OrientElement> iRecords,
+  protected void sendRecordsContent(final OHttpRequest iRequest, final OHttpResponse iResponse, Iterable<OrientVertex> iRecords,
       String iFetchPlan) throws IOException {
     final StringWriter buffer = new StringWriter();
     final OJSONWriter json = new OJSONWriter(buffer, OHttpResponse.JSON_FORMAT);
@@ -112,19 +113,16 @@ public class OServerCommandGetGephi extends OServerCommandAuthenticatedDbAbstrac
     iResponse.send(OHttpUtils.STATUS_OK_CODE, OHttpUtils.STATUS_OK_DESCRIPTION, OHttpUtils.CONTENT_JSON, buffer.toString(), null);
   }
 
-  protected void generateGraphDbOutput(final Iterable<OrientElement> iVertices, final OJSONWriter json) throws IOException {
+  protected void generateGraphDbOutput(final Iterable<OrientVertex> iVertices, final OJSONWriter json) throws IOException {
     if (iVertices == null)
       return;
 
     // CREATE A SET TO SPEED UP SEARCHES ON VERTICES
     final Set<OrientVertex> vertexes = new HashSet<OrientVertex>();
-    final Set<OrientEdge> edges = new HashSet<OrientEdge>();
+    for (OrientVertex id : iVertices)
+      vertexes.add(id);
 
-    for (OrientElement id : iVertices)
-      if (id instanceof OrientVertex)
-        vertexes.add((OrientVertex) id);
-      else
-        edges.add((OrientEdge) id);
+    final Set<OrientEdge> edges = new HashSet<OrientEdge>();
 
     for (OrientVertex vertex : vertexes) {
       json.resetAttributes();

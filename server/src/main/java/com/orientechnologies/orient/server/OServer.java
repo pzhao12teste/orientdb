@@ -164,13 +164,6 @@ public class OServer {
     return clientConnectionManager;
   }
 
-  public void restart() throws ClassNotFoundException, InvocationTargetException, InstantiationException, NoSuchMethodException,
-      IllegalAccessException {
-    shutdown();
-    startup(configuration);
-    activate();
-  }
-
   /**
    * Load an extension class by name.
    */
@@ -232,19 +225,18 @@ public class OServer {
     Orient
         .instance()
         .getProfiler()
-        .registerHookValue("system.databases", "List of databases configured in Server", METRIC_TYPE.TEXT,
-            new OProfilerHookValue() {
-              @Override
-              public Object getValue() {
-                final StringBuilder dbs = new StringBuilder(64);
-                for (String dbName : getAvailableStorageNames().keySet()) {
-                  if (dbs.length() > 0)
-                    dbs.append(',');
-                  dbs.append(dbName);
-                }
-                return dbs.toString();
+        .registerHookValue("system.databases", "List of databases configured in Server", METRIC_TYPE.TEXT, new OProfilerHookValue() {
+            @Override
+            public Object getValue() {
+              final StringBuilder dbs = new StringBuilder(64);
+              for (String dbName : getAvailableStorageNames().keySet()) {
+                if (dbs.length()>0)
+                  dbs.append(',');
+                dbs.append(dbName);
               }
-            });
+              return dbs.toString();
+            }
+          });
 
     return this;
   }
@@ -612,7 +604,7 @@ public class OServer {
   }
 
   public Collection<OServerPluginInfo> getPlugins() {
-    return pluginManager != null ? pluginManager.getPlugins() : null;
+    return pluginManager.getPlugins();
   }
 
   public OContextConfiguration getContextConfiguration() {

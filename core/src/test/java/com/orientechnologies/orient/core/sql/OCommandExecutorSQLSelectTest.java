@@ -2,13 +2,9 @@ package com.orientechnologies.orient.core.sql;
 
 import com.orientechnologies.common.profiler.OProfiler;
 import com.orientechnologies.orient.core.Orient;
-import com.orientechnologies.orient.core.db.ODatabaseInternal;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
-import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import org.testng.annotations.AfterClass;
@@ -18,16 +14,13 @@ import org.testng.annotations.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static org.testng.Assert.*;
 
 @Test
 public class OCommandExecutorSQLSelectTest {
-  private static String DB_STORAGE             = "memory";
-  private static String DB_NAME                = "OCommandExecutorSQLSelectTest";
-
-  private int           ORDER_SKIP_LIMIT_ITEMS = 100 * 1000;
+  private static String DB_STORAGE = "memory";
+  private static String DB_NAME    = "OCommandExecutorSQLSelectTest";
 
   ODatabaseDocumentTx   db;
 
@@ -107,16 +100,8 @@ public class OCommandExecutorSQLSelectTest {
     db.command(new OCommandSQL("insert into TestUrl content { \"url\": \"http://www.google.com\" }")).execute();
 
     db.command(new OCommandSQL("CREATE class TestParams")).execute();
-    db.command(new OCommandSQL("insert into TestParams  set name = 'foo', surname ='foo', active = true")).execute();
-    db.command(new OCommandSQL("insert into TestParams  set name = 'foo', surname ='bar', active = false")).execute();
-
-    db.command(new OCommandSQL("CREATE class TestParamsEmbedded")).execute();
-    db.command(
-        new OCommandSQL("insert into TestParamsEmbedded set emb = {  \n" + "            \"count\":0,\n"
-            + "            \"testupdate\":\"1441258203385\"\n" + "         }")).execute();
-    db.command(
-        new OCommandSQL("insert into TestParamsEmbedded set emb = {  \n" + "            \"count\":1,\n"
-            + "            \"testupdate\":\"1441258203385\"\n" + "         }")).execute();
+    db.command(new OCommandSQL("insert into TestParams  set name = 'foo', surname ='foo'")).execute();
+    db.command(new OCommandSQL("insert into TestParams  set name = 'foo', surname ='bar'")).execute();
 
     db.command(new OCommandSQL("CREATE class TestBacktick")).execute();
     db.command(new OCommandSQL("insert into TestBacktick  set foo = 1, bar = 2, `foo-bar` = 10")).execute();
@@ -149,84 +134,6 @@ public class OCommandExecutorSQLSelectTest {
             "insert into OCommandExecutorSQLSelectTest_aggregations set data = [{\"size\": 0}, {\"size\": 0}, {\"size\": 30}, {\"size\": 50}, {\"size\": 50}]"))
         .execute();
 
-    initExpandSkipLimit(db);
-
-    initMassiveOrderSkipLimit(db);
-    initDatesSet(db);
-
-    initMatchesWithRegex(db);
-    initDistinctLimit(db);
-    initLinkListSequence(db);
-  }
-
-  private void initLinkListSequence(ODatabaseDocumentTx db) {
-    db.command(new OCommandSQL("CREATE class LinkListSequence")).execute();
-
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1.1.1'")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1.1.2'")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1.2.1'")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1.2.2'")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1.1', children = (select from LinkListSequence where name like '1.1.%')")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1.2', children = (select from LinkListSequence where name like '1.2.%')")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '1', children = (select from LinkListSequence where name in ['1.1', '1.2'])")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = '2'")).execute();
-    db.command(new OCommandSQL("insert into LinkListSequence set name = 'root', children = (select from LinkListSequence where name in ['1', '1'])")).execute();
-
-  }
-
-  private void initMatchesWithRegex(ODatabaseInternal<ORecord> db) {
-    db.command(new OCommandSQL("CREATE class matchesstuff")).execute();
-
-    db.command(new OCommandSQL("insert into matchesstuff (name, foo) values ('admin[name]', 1)")).execute();
-  }
-
-  private void initDistinctLimit(ODatabaseInternal<ORecord> db) {
-    db.command(new OCommandSQL("CREATE class DistinctLimit")).execute();
-
-    db.command(new OCommandSQL("insert into DistinctLimit (name, foo) values ('one', 1)")).execute();
-    db.command(new OCommandSQL("insert into DistinctLimit (name, foo) values ('one', 1)")).execute();
-    db.command(new OCommandSQL("insert into DistinctLimit (name, foo) values ('two', 2)")).execute();
-    db.command(new OCommandSQL("insert into DistinctLimit (name, foo) values ('two', 2)")).execute();
-  }
-
-  private void initDatesSet(ODatabaseDocumentTx db) {
-    db.command(new OCommandSQL("create class OCommandExecutorSQLSelectTest_datesSet")).execute();
-    db.command(new OCommandSQL("create property OCommandExecutorSQLSelectTest_datesSet.foo embeddedlist date")).execute();
-    db.command(new OCommandSQL("insert into OCommandExecutorSQLSelectTest_datesSet set foo = ['2015-10-21']")).execute();
-  }
-
-  private void initMassiveOrderSkipLimit(ODatabaseDocumentTx db) {
-    db.getMetadata().getSchema().createClass("MassiveOrderSkipLimit");
-    db.declareIntent(new OIntentMassiveInsert());
-    String fieldValue = "laskdf lkajsd flaksjdf laksjd flakjsd flkasjd flkajsd flkajsd flkajsd flkajsd flkajsd flkjas;lkj a;ldskjf laksdj asdklasdjf lskdaj fladsd";
-    for (int i = 0; i < ORDER_SKIP_LIMIT_ITEMS; i++) {
-      ODocument doc = new ODocument("MassiveOrderSkipLimit");
-      doc.field("nnum", i);
-      doc.field("aaa", fieldValue);
-      doc.field("bbb", fieldValue);
-      doc.field("bbba", fieldValue);
-      doc.field("daf", fieldValue);
-      doc.field("dfgd", fieldValue);
-      doc.field("dgd", fieldValue);
-
-      doc.save();
-    }
-    db.declareIntent(null);
-  }
-
-  private void initExpandSkipLimit(ODatabaseDocumentTx db) {
-    db.getMetadata().getSchema().createClass("ExpandSkipLimit");
-
-    for (int i = 0; i < 5; i++) {
-      ODocument doc = new ODocument("ExpandSkipLimit");
-      doc.field("nnum", i);
-      doc.save();
-      ODocument parent = new ODocument("ExpandSkipLimit");
-      parent.field("parent", true);
-      parent.field("num", i);
-      parent.field("linked", doc);
-      parent.save();
-    }
   }
 
   @AfterClass
@@ -481,38 +388,6 @@ public class OCommandExecutorSQLSelectTest {
             "select from TestParams let $foo = (select name from TestParams where surname = :name) where surname in $foo.name "))
         .execute(params);
     assertEquals(qResult.size(), 1);
-  }
-
-  @Test
-  public void testBooleanParams() {
-    // issue #4224
-    List<ODocument> qResult = db.command(new OCommandSQL("select name from TestParams where name = ? and active = ?")).execute(
-        "foo", true);
-    assertEquals(qResult.size(), 1);
-  }
-
-  @Test
-  public void testOrderByEmbeddedParams() {
-    // issue #4949
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put("paramvalue", "count");
-    List<ODocument> qResult = db.command(new OCommandSQL("select from TestParamsEmbedded order by emb[:paramvalue] DESC")).execute(
-        parameters);
-    assertEquals(qResult.size(), 2);
-    Map embedded = qResult.get(0).field("emb");
-    assertEquals(embedded.get("count"), 1);
-  }
-
-  @Test
-  public void testOrderByEmbeddedParams2() {
-    // issue #4949
-    Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put("paramvalue", "count");
-    List<ODocument> qResult = db.command(new OCommandSQL("select from TestParamsEmbedded order by emb[:paramvalue] ASC")).execute(
-        parameters);
-    assertEquals(qResult.size(), 2);
-    Map embedded = qResult.get(0).field("emb");
-    assertEquals(embedded.get("count"), 0);
   }
 
   @Test
@@ -828,199 +703,15 @@ public class OCommandExecutorSQLSelectTest {
   }
 
   @Test
-  public void testExpandSkipLimit() {
-    // issue #4985
-    OSQLSynchQuery sql = new OSQLSynchQuery(
-        "SELECT expand(linked) from ExpandSkipLimit where parent = true order by nnum skip 1 limit 1");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-    ODocument doc = results.get(0);
-    assertEquals(doc.field("nnum"), 1);
-  }
-
-  @Test
-  public void testMassiveOrderAscSkipLimit() {
-    long begin = System.currentTimeMillis();
-    int skip = 1000;
-    OSQLSynchQuery sql = new OSQLSynchQuery("SELECT from MassiveOrderSkipLimit order by nnum asc skip " + skip + " limit 5");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 5);
-    System.out.println("elapsed: " + (System.currentTimeMillis() - begin));
-    for (int i = 0; i < results.size(); i++) {
-      ODocument doc = results.get(i);
-      assertEquals(doc.field("nnum"), skip + i);
-    }
-  }
-
-  @Test
-  public void testMassiveOrderDescSkipLimit() {
-    long begin = System.currentTimeMillis();
-    int skip = 1000;
-    OSQLSynchQuery sql = new OSQLSynchQuery("SELECT from MassiveOrderSkipLimit order by nnum desc skip " + skip + " limit 5");
-
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 5);
-    System.out.println("elapsed: " + (System.currentTimeMillis() - begin));
-    for (int i = 0; i < results.size(); i++) {
-      ODocument doc = results.get(i);
-      assertEquals(doc.field("nnum"), ORDER_SKIP_LIMIT_ITEMS - 1 - skip - i);
-    }
-  }
-
-  @Test
   public void testBacktick() {
+
     OSQLSynchQuery sql = new OSQLSynchQuery("SELECT `foo-bar` as r from TestBacktick");
     List<ODocument> results = db.query(sql);
     assertEquals(results.size(), 1);
     ODocument doc = results.get(0);
     assertEquals(doc.field("r"), 10);
-  }
 
-  @Test
-  public void testIntersectExpandLet() {
-    //issue #5121
-    OSQLSynchQuery sql = new OSQLSynchQuery("select expand(intersect($q1, $q2)) "
-        + "let $q1 = (select from OUser where name ='admin')," + "$q2 = (select from OUser where name ='admin')");
 
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-    for (int i = 0; i < results.size(); i++) {
-      ODocument doc = results.get(i);
-      assertEquals(doc.field("name"), "admin");
-    }
-  }
-
-  @Test
-  public void testDatesListContainsString() {
-    //issue #3526
-    OSQLSynchQuery sql = new OSQLSynchQuery("select from OCommandExecutorSQLSelectTest_datesSet where foo contains '2015-10-21'");
-
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testParamWithMatches(){
-    //issue #5229
-    Map<String, Object> params = new HashMap<String, Object>();
-    params.put("param1", "adm.*");
-    OSQLSynchQuery sql = new OSQLSynchQuery("select from OUser where name matches :param1");
-    List<ODocument> results = db.query(sql, params);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testParamWithMatchesQuoteRegex(){
-    //issue #5229
-    Map<String, Object> params = new HashMap<String, Object>();
-    params.put("param1", ".*admin[name].*");//will not work
-    OSQLSynchQuery sql = new OSQLSynchQuery("select from matchesstuff where name matches :param1");
-    List<ODocument> results = db.query(sql, params);
-    assertEquals(results.size(), 0);
-    params.put("param1", Pattern.quote("admin[name]") + ".*");//should work
-    results = db.query(sql, params);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testMatchesWithQuotes(){
-    //issue #5229
-    String pattern = Pattern.quote("adm")+".*";
-    OSQLSynchQuery sql = new OSQLSynchQuery("SELECT FROM matchesstuff WHERE (name matches ?)");
-    List<ODocument> results = db.query(sql, pattern);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testMatchesWithQuotes2(){
-    //issue #5229
-    OSQLSynchQuery sql = new OSQLSynchQuery("SELECT FROM matchesstuff WHERE (name matches '\\\\Qadm\\\\E.*' and not ( name matches '(.*)foo(.*)' ) )");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testMatchesWithQuotes3(){
-    //issue #5229
-    OSQLSynchQuery sql = new OSQLSynchQuery("SELECT FROM matchesstuff WHERE (name matches '\\\\Qadm\\\\E.*' and  ( name matches '\\\\Qadmin\\\\E.*' ) )");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testParamWithMatchesAndNot(){
-    //issue #5229
-    Map<String, Object> params = new HashMap<String, Object>();
-    params.put("param1", "adm.*");
-    params.put("param2", "foo.*");
-    OSQLSynchQuery sql = new OSQLSynchQuery("select from OUser where (name matches :param1 and not (name matches :param2))");
-    List<ODocument> results = db.query(sql, params);
-    assertEquals(results.size(), 1);
-
-    params.put("param1",  Pattern.quote("adm") + ".*");
-    results = db.query(sql, params);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testDistinctLimit(){
-    OSQLSynchQuery sql = new OSQLSynchQuery("select distinct(name) from DistinctLimit limit 1");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-
-    sql = new OSQLSynchQuery("select distinct(name) from DistinctLimit limit 2");
-    results = db.query(sql);
-    assertEquals(results.size(), 2);
-
-    sql = new OSQLSynchQuery("select distinct(name) from DistinctLimit limit 3");
-    results = db.query(sql);
-    assertEquals(results.size(), 2);
-
-    sql = new OSQLSynchQuery("select distinct(name) from DistinctLimit limit -1");
-    results = db.query(sql);
-    assertEquals(results.size(), 2);
-  }
-
-  @Test
-  public void testSelectFromClusterNumber() {
-    OClass clazz = db.getMetadata().getSchema().getClass("DistinctLimit");
-    int firstCluster = clazz.getClusterIds()[0];
-    OSQLSynchQuery sql = new OSQLSynchQuery("select from cluster:" + firstCluster + " limit 1");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 1);
-  }
-
-  @Test
-  public void testLinkListSequence1() {
-    OSQLSynchQuery sql = new OSQLSynchQuery("select expand(children.children.children) from LinkListSequence where name = 'root'");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 4);
-    for(ODocument result:results){
-      String value = result.field("name");
-      assertEquals(value.length(), 5);
-    }
-  }
-
-  @Test
-  public void testLinkListSequence2() {
-    OSQLSynchQuery sql = new OSQLSynchQuery("select expand(children[0].children.children) from LinkListSequence where name = 'root'");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 4);
-    for(ODocument result:results){
-      String value = result.field("name");
-      assertEquals(value.length(), 5);
-    }
-  }
-
-  @Test
-  public void testLinkListSequence3() {
-    OSQLSynchQuery sql = new OSQLSynchQuery("select expand(children[0].children[0].children) from LinkListSequence where name = 'root'");
-    List<ODocument> results = db.query(sql);
-    assertEquals(results.size(), 2);
-    for(ODocument result:results){
-      String value = result.field("name");
-      assertTrue(value.equals("1.1.1") ||value.equals("1.1.2"));
-    }
   }
 
   private long indexUsages(ODatabaseDocumentTx db) {
